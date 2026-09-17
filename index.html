@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Zapp — P2P Encrypted Messenger</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS for Zero-Config WebRTC P2P Connections -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        zapp: {
+                            50: '#f0fdf4',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            900: '#064e3b',
+                        },
+                        dark: {
+                            bg: '#090d16',
+                            surface: '#111827',
+                            card: '#1f2937',
+                            border: '#1f293d',
+                            hover: '#374151/40'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .app-height {
+            height: 100vh;
+            height: 100dvh;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(9, 13, 22, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-slate-100 app-height flex flex-col font-sans overflow-hidden antialiased select-none">
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app" class="flex flex-1 w-full h-full relative overflow-hidden">
+
+        <!-- SIDEBAR: CONTACTS & PROFILE -->
+        <aside id="sidebar" class="w-full md:w-80 lg:w-96 bg-dark-surface border-r border-dark-border flex flex-col z-20 transition-transform duration-300 absolute md:relative inset-0 md:translate-x-0">
+            
+            <!-- App Title & User Profile Header -->
+            <div class="p-4 border-b border-dark-border flex items-center justify-between glass-panel">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 flex items-center justify-center font-black text-xl text-slate-950 shadow-lg shadow-emerald-500/20">
+                            <span id="userAvatar">Z</span>
+                        </div>
+                        <span id="statusIndicator" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-500 border-2 border-dark-surface rounded-full" title="Connecting to P2P network..."></span>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="font-bold text-sm tracking-wide text-white">Zapp</span>
+                            <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">P2P</span>
+                        </div>
+                        <div class="flex items-center space-x-1 cursor-pointer group mt-0.5" onclick="copyMyID()">
+                            <span id="myUserIdDisplay" class="font-mono text-xs font-semibold text-slate-400 group-hover:text-emerald-400 truncate">Generating ID...</span>
+                            <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="openAddContactModal()" class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 transition-all duration-200 focus:outline-none shadow-sm" title="Add Contact">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                </button>
+            </div>
+
+            <!-- Contacts Header & Search -->
+            <div class="px-4 py-3 border-b border-dark-border/60 bg-slate-900/40">
+                <input type="text" id="contactSearchInput" oninput="filterContacts()" placeholder="Search chats..." class="w-full bg-slate-950/80 border border-dark-border rounded-xl px-3.5 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition">
+            </div>
+
+            <!-- Contacts List -->
+            <div id="contactsList" class="flex-1 overflow-y-auto divide-y divide-dark-border/20">
+                <div class="p-8 text-center text-slate-500 text-sm">
+                    No active chats.<br>Click the <b>+</b> button to add a friend's Zapp ID.
+                </div>
+            </div>
+        </aside>
+
+        <!-- CHAT WINDOW AREA -->
+        <main id="chatWindow" class="flex-1 flex flex-col bg-dark-bg w-full h-full absolute md:relative inset-0 translate-x-full md:translate-x-0 transition-transform duration-300 z-30">
+            
+            <!-- Empty Placeholder State -->
+            <div id="noChatSelected" class="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-dark-bg via-slate-950 to-dark-bg">
+                <div class="w-24 h-24 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5 text-emerald-400 shadow-2xl shadow-emerald-500/10">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-100 tracking-tight mb-2">Welcome to Zapp</h2>
+                <p class="text-slate-400 text-sm max-w-md leading-relaxed">Direct peer-to-peer encrypted messaging, photos, videos, and file sharing. No servers, no tracking, 100% local browser storage.</p>
+            </div>
+
+            <!-- Active Chat Interface -->
+            <div id="activeChat" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+                
+                <!-- Chat Header -->
+                <div class="px-4 py-3 bg-dark-surface/90 border-b border-dark-border flex items-center justify-between shadow-md z-10 glass-panel">
+                    <div class="flex items-center space-x-3">
+                        <button onclick="closeActiveChat()" class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center font-bold text-white shadow">
+                            <span id="activeContactAvatar">C</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="activeContactName" class="font-semibold text-slate-100 text-base leading-tight">Contact Name</span>
+                            <span id="activeContactId" class="font-mono text-[11px] text-slate-400">ID: ----</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Scroll Box -->
+                <div id="messagesBox" class="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-950/50">
+                    <!-- Dynamic Messages Output -->
+                </div>
+
+                <!-- Emoji Drawer (Collapsible) -->
+                <div id="emojiPicker" class="hidden bg-dark-surface border-t border-dark-border p-3 grid grid-cols-8 gap-2 text-2xl max-h-48 overflow-y-auto">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Hidden File Input for Media & Attachments -->
+                <input type="file" id="fileInput" onchange="handleFileSelect(event)" class="hidden" multiple="false">
+
+                <!-- Chat Input Footer -->
+                <div class="p-3 bg-dark-surface border-t border-dark-border flex items-end space-x-2 glass-panel">
+                    <button onclick="toggleEmojiPicker()" class="p-2.5 text-slate-400 hover:text-amber-400 transition focus:outline-none rounded-xl hover:bg-slate-800" title="Emojis">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+
+                    <button onclick="triggerFileInput()" class="p-2.5 text-slate-400 hover:text-emerald-400 transition focus:outline-none rounded-xl hover:bg-slate-800" title="Share Photo, Video, or File">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </button>
+
+                    <textarea id="messageInput" rows="1" placeholder="Type a message..." enterkeyhint="send" autocomplete="off" autocorrect="on" class="flex-1 bg-slate-950 border border-dark-border rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 resize-none max-h-32 overflow-y-auto"></textarea>
+
+                    <button onclick="sendMessage()" class="p-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition flex-shrink-0 focus:outline-none" title="Send">
+                        <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD CONTACT MODAL -->
+    <div id="addContactModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dark-surface border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-bold text-slate-100">Add New Zapp Contact</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Friend's Zapp Unique ID *</label>
+                    <input type="text" id="newContactId" placeholder="Paste friend's ID..." class="w-full bg-slate-950 border border-dark-border rounded-xl px-3.5 py-2.5 text-sm text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Contact Name *</label>
+                    <input type="text" id="newContactName" placeholder="e.g. Alex" class="w-full bg-slate-950 border border-dark-border rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="closeAddContactModal()" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition">Cancel</button>
+                <button onclick="saveNewContact()" class="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition shadow-lg shadow-emerald-500/20">Save Contact</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // --- GLOBALS & STATE ---
+        let myUUID = localStorage.getItem('zapp_my_id');
+        if (!myUUID) {
+            myUUID = crypto.randomUUID();
+            localStorage.setItem('zapp_my_id', myUUID);
+        }
+
+        let db;
+        let peer = null;
+        let activeConnections = {}; // targetUUID -> DataConnection
+        let activeChatContactId = null;
+        let contactsMap = {}; // id -> contact obj
+
+        const EMOJIS = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😍','🥰','😘','😜','😝','😛','🤑','🤗','🤓','😎','🤡','🥳','👍','👎','👋','👏','🙌','🔥','❤️','✨','🎉'];
+
+        // --- INDEXEDDB INIT ---
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('ZappChatDB', 2);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains('contacts')) {
+                        database.createObjectStore('contacts', { keyPath: 'id' });
+                    }
+                    if (!database.objectStoreNames.contains('messages')) {
+                        const msgStore = database.createObjectStore('messages', { keyPath: 'id' });
+                        msgStore.createIndex('chatId', 'chatId', { unique: false });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        async function getContactsFromDB() {
+            return new Promise((resolve) => {
+                const tx = db.transaction('contacts', 'readonly');
+                const store = tx.objectStore('contacts');
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result || []);
+            });
+        }
+
+        async function saveContactToDB(contact) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('contacts', 'readwrite');
+                const store = tx.objectStore('contacts');
+                store.put(contact);
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        async function getMessagesFromDB(chatId) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('messages', 'readonly');
+                const store = tx.objectStore('messages');
+                const index = store.index('chatId');
+                const request = index.getAll(chatId);
+                request.onsuccess = () => resolve(request.result || []);
+            });
+        }
+
+        async function saveMessageToDB(message) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('messages', 'readwrite');
+                const store = tx.objectStore('messages');
+                store.put(message);
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        async function updateMessageStatusInDB(msgId, status) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('messages', 'readwrite');
+                const store = tx.objectStore('messages');
+                const getReq = store.get(msgId);
+                getReq.onsuccess = () => {
+                    const msg = getReq.result;
+                    if (msg) {
+                        msg.status = status;
+                        store.put(msg);
+                    }
+                };
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        // --- APP INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('myUserIdDisplay').innerText = myUUID;
+            document.getElementById('userAvatar').innerText = myUUID.substring(0, 1).toUpperCase();
+
+            await initDB();
+            await loadContacts();
+            initPeerJS();
+            initEmojiPicker();
+
+            const msgInput = document.getElementById('messageInput');
+            msgInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        // --- PEERJS ENGINE ---
+        function initPeerJS() {
+            peer = new Peer(myUUID, { debug: 1 });
+
+            peer.on('open', (id) => {
+                document.getElementById('statusIndicator').className = 'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-dark-surface rounded-full shadow-lg shadow-emerald-500/50';
+                document.getElementById('statusIndicator').title = 'Zapp Network Connected';
+            });
+
+            peer.on('connection', (conn) => {
+                setupConnectionHandlers(conn);
+            });
+
+            peer.on('error', (err) => {
+                console.warn('Zapp P2P Error:', err.type);
+            });
+        }
+
+        function setupConnectionHandlers(conn) {
+            const peerId = conn.peer;
+            activeConnections[peerId] = conn;
+
+            conn.on('open', () => {
+                flushPendingMessages(peerId);
+            });
+
+            conn.on('data', async (payload) => {
+                handleIncomingP2PData(payload, peerId);
+            });
+
+            conn.on('close', () => {
+                delete activeConnections[peerId];
+            });
+        }
+
+        function connectToPeer(targetId) {
+            if (activeConnections[targetId] && activeConnections[targetId].open) {
+                return activeConnections[targetId];
+            }
+            const conn = peer.connect(targetId, { reliable: true });
+            setupConnectionHandlers(conn);
+            return conn;
+        }
+
+        // --- P2P DATA HANDLER & ACK ---
+        async function handleIncomingP2PData(data, senderId) {
+            if (data.type === 'CHAT_MSG') {
+                const newMsg = {
+                    id: data.id,
+                    chatId: senderId,
+                    senderId: senderId,
+                    text: data.text || '',
+                    fileData: data.fileData || null,
+                    fileType: data.fileType || null,
+                    fileName: data.fileName || null,
+                    fileSize: data.fileSize || null,
+                    timestamp: data.timestamp,
+                    status: 'delivered'
+                };
+                await saveMessageToDB(newMsg);
+
+                const conn = activeConnections[senderId];
+                if (conn && conn.open) {
+                    conn.send({ type: 'ACK_DELIVERED', msgId: data.id });
+                }
+
+                if (activeChatContactId === senderId) {
+                    newMsg.status = 'read';
+                    await saveMessageToDB(newMsg);
+                    if (conn && conn.open) {
+                        conn.send({ type: 'ACK_READ', msgId: data.id });
+                    }
+                    renderMessages(senderId);
+                } else {
+                    renderContactsList();
+                }
+            } else if (data.type === 'ACK_DELIVERED') {
+                await updateMessageStatusInDB(data.msgId, 'delivered');
+                if (activeChatContactId) renderMessages(activeChatContactId);
+            } else if (data.type === 'ACK_READ') {
+                await updateMessageStatusInDB(data.msgId, 'read');
+                if (activeChatContactId) renderMessages(activeChatContactId);
+            }
+        }
+
+        async function flushPendingMessages(targetId) {
+            const msgs = await getMessagesFromDB(targetId);
+            const pending = msgs.filter(m => m.senderId === myUUID && m.status === 'sent');
+            const conn = activeConnections[targetId];
+
+            if (conn && conn.open) {
+                for (let m of pending) {
+                    conn.send({
+                        type: 'CHAT_MSG',
+                        id: m.id,
+                        text: m.text,
+                        fileData: m.fileData,
+                        fileType: m.fileType,
+                        fileName: m.fileName,
+                        fileSize: m.fileSize,
+                        timestamp: m.timestamp
+                    });
+                }
+            }
+        }
+
+        // --- SENDING TEXT & MEDIA ---
+        async function sendMessage(fileObj = null) {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text && !fileObj) return;
+
+            if (!activeChatContactId) return;
+
+            const msgId = crypto.randomUUID();
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const messageObj = {
+                id: msgId,
+                chatId: activeChatContactId,
+                senderId: myUUID,
+                text: text,
+                fileData: fileObj ? fileObj.data : null,
+                fileType: fileObj ? fileObj.type : null,
+                fileName: fileObj ? fileObj.name : null,
+                fileSize: fileObj ? fileObj.size : null,
+                timestamp: timestamp,
+                status: 'sent'
+            };
+
+            await saveMessageToDB(messageObj);
+            input.value = '';
+
+            const conn = connectToPeer(activeChatContactId);
+            if (conn && conn.open) {
+                conn.send({
+                    type: 'CHAT_MSG',
+                    id: msgId,
+                    text: messageObj.text,
+                    fileData: messageObj.fileData,
+                    fileType: messageObj.fileType,
+                    fileName: messageObj.fileName,
+                    fileSize: messageObj.fileSize,
+                    timestamp: timestamp
+                });
+            }
+
+            renderMessages(activeChatContactId);
+            renderContactsList();
+        }
+
+        // --- FILE ATTACHMENT HANDLER ---
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                let fileCategory = 'file';
+
+                if (file.type.startsWith('image/')) fileCategory = 'image';
+                else if (file.type.startsWith('video/')) fileCategory = 'video';
+
+                const formattedSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+                await sendMessage({
+                    data: base64Data,
+                    type: fileCategory,
+                    name: file.name,
+                    size: formattedSize
+                });
+
+                document.getElementById('fileInput').value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- UI RENDERERS ---
+        async function loadContacts() {
+            const contacts = await getContactsFromDB();
+            contactsMap = {};
+            contacts.forEach(c => contactsMap[c.id] = c);
+            renderContactsList();
+        }
+
+        async function renderContactsList() {
+            const listContainer = document.getElementById('contactsList');
+            const contacts = Object.values(contactsMap);
+
+            if (contacts.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-slate-500 text-sm">
+                        No active chats.<br>Click the <b>+</b> button to add a friend's Zapp ID.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            for (let c of contacts) {
+                const msgs = await getMessagesFromDB(c.id);
+                let lastMsg = 'No messages yet';
+                if (msgs.length > 0) {
+                    const last = msgs[msgs.length - 1];
+                    lastMsg = last.fileType ? `[Shared ${last.fileType}]` : last.text;
+                }
+
+                html += `
+                    <div onclick="openChat('${c.id}')" class="p-3.5 flex items-center space-x-3 cursor-pointer hover:bg-dark-hover transition ${activeChatContactId === c.id ? 'bg-slate-800/80 border-l-4 border-emerald-500' : ''}">
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center font-bold text-white shadow flex-shrink-0">
+                            ${c.name.substring(0, 1).toUpperCase()}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-baseline">
+                                <span class="font-semibold text-slate-200 text-sm truncate">${c.name}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 truncate mt-0.5">${lastMsg}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            listContainer.innerHTML = html;
+        }
+
+        async function openChat(contactId) {
+            activeChatContactId = contactId;
+            const contact = contactsMap[contactId];
+
+            document.getElementById('noChatSelected').classList.add('hidden');
+            document.getElementById('activeChat').classList.remove('hidden');
+
+            document.getElementById('activeContactName').innerText = contact.name;
+            document.getElementById('activeContactId').innerText = `ID: ${contact.id}`;
+            document.getElementById('activeContactAvatar').innerText = contact.name.substring(0, 1).toUpperCase();
+
+            document.getElementById('chatWindow').classList.remove('translate-x-full');
+
+            const msgs = await getMessagesFromDB(contactId);
+            const conn = connectToPeer(contactId);
+            for (let m of msgs) {
+                if (m.senderId === contactId && m.status !== 'read') {
+                    m.status = 'read';
+                    await saveMessageToDB(m);
+                    if (conn && conn.open) {
+                        conn.send({ type: 'ACK_READ', msgId: m.id });
+                    }
+                }
+            }
+
+            renderMessages(contactId);
+            renderContactsList();
+        }
+
+        function closeActiveChat() {
+            document.getElementById('chatWindow').classList.add('translate-x-full');
+            activeChatContactId = null;
+            renderContactsList();
+        }
+
+        async function renderMessages(contactId) {
+            if (activeChatContactId !== contactId) return;
+            const box = document.getElementById('messagesBox');
+            const msgs = await getMessagesFromDB(contactId);
+
+            let html = '';
+            msgs.forEach(m => {
+                const isMe = m.senderId === myUUID;
+                
+                let mediaPayload = '';
+                if (m.fileType === 'image') {
+                    mediaPayload = `<img src="${m.fileData}" class="rounded-xl max-h-64 w-auto object-cover mb-1.5 cursor-pointer hover:opacity-90 transition" onclick="window.open('${m.fileData}')"/>`;
+                } else if (m.fileType === 'video') {
+                    mediaPayload = `<video src="${m.fileData}" controls class="rounded-xl max-h-64 w-full mb-1.5"></video>`;
+                } else if (m.fileType === 'file') {
+                    mediaPayload = `
+                        <a href="${m.fileData}" download="${m.fileName}" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-900/80 border border-slate-700/50 mb-1.5 hover:bg-slate-900 transition">
+                            <svg class="w-7 h-7 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            <div class="flex flex-col min-w-0 flex-1">
+                                <span class="text-xs font-semibold text-slate-100 truncate">${m.fileName}</span>
+                                <span class="text-[10px] text-slate-400">${m.fileSize}</span>
+                            </div>
+                        </a>
+                    `;
+                }
+
+                html += `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-lg ${isMe ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-br-none' : 'bg-dark-surface text-slate-100 rounded-bl-none border border-dark-border'}">
+                            ${mediaPayload}
+                            ${m.text ? `<p class="break-words leading-relaxed">${m.text}</p>` : ''}
+                            <div class="flex items-center justify-end space-x-1 mt-1 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}">
+                                <span>${m.timestamp}</span>
+                                ${isMe ? `<span>${getTickSVG(m.status)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            box.innerHTML = html;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- TICK STATUS SVGs ---
+        function getTickSVG(status) {
+            if (status === 'sent') {
+                return `<svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
+            } else if (status === 'delivered') {
+                return `<svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7M11 13l2.5 2.5L22 7"></path></svg>`;
+            } else if (status === 'read') {
+                return `<svg class="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7M11 13l2.5 2.5L22 7"></path></svg>`;
+            }
+            return '';
+        }
+
+        // --- EMOJI PICKER ---
+        function initEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            picker.innerHTML = EMOJIS.map(e => `
+                <button onclick="insertEmoji('${e}')" class="hover:bg-slate-800 rounded-lg p-1 transition flex items-center justify-center">${e}</button>
+            `).join('');
+        }
+
+        function toggleEmojiPicker() {
+            document.getElementById('emojiPicker').classList.toggle('hidden');
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('messageInput');
+            input.value += emoji;
+            input.focus();
+        }
+
+        // --- MODAL & CONTACTS ---
+        function openAddContactModal() {
+            document.getElementById('addContactModal').classList.remove('hidden');
+        }
+
+        function closeAddContactModal() {
+            document.getElementById('addContactModal').classList.add('hidden');
+            document.getElementById('newContactId').value = '';
+            document.getElementById('newContactName').value = '';
+        }
+
+        async function saveNewContact() {
+            const id = document.getElementById('newContactId').value.trim();
+            const name = document.getElementById('newContactName').value.trim();
+
+            if (!id || !name) {
+                alert('Please enter both Unique ID and Name.');
+                return;
+            }
+
+            if (id === myUUID) {
+                alert('You cannot add your own ID.');
+                return;
+            }
+
+            const newContact = { id, name, created_at: Date.now() };
+            await saveContactToDB(newContact);
+            contactsMap[id] = newContact;
+
+            closeAddContactModal();
+            renderContactsList();
+            openChat(id);
+        }
+
+        function copyMyID() {
+            navigator.clipboard.writeText(myUUID);
+            alert('Your Zapp Unique ID copied!\nShare this ID with your friend.');
+        }
+
+        function filterContacts() {
+            const query = document.getElementById('contactSearchInput').value.toLowerCase();
+            const items = document.querySelectorAll('#contactsList > div');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
