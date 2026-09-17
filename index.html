@@ -394,11 +394,17 @@
                 const store = tx.objectStore('messages');
                 const index = store.index('chatId');
                 const request = index.getAll(chatId);
-                request.onsuccess = () => resolve(request.result || []);
+                request.onsuccess = () => {
+                    const msgs = request.result || [];
+                    // Ensure chronological sorting by createdAt timestamp
+                    msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    resolve(msgs);
+                };
             });
         }
 
         async function saveMessageToDB(message) {
+            if (!message.createdAt) message.createdAt = Date.now();
             return new Promise((resolve) => {
                 const tx = db.transaction('messages', 'readwrite');
                 const store = tx.objectStore('messages');
@@ -474,6 +480,16 @@
             peer.on('open', () => {
                 document.getElementById('statusIndicator').className = 'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zapp-500 border-2 border-zapp-800 rounded-full shadow';
                 document.getElementById('statusIndicator').title = 'P2P Online';
+
+                // Automatically try connecting to all contacts to pull offline messages
+                connectAllContacts();
+
+                // Periodic check/reconnect loop every 8 seconds for pending unsent messages
+                if (!window.peerSyncInterval) {
+                    window.peerSyncInterval = setInterval(() => {
+                        checkAndReconnectPending();
+                    }, 8000);
+                }
             });
 
             peer.on('connection', (conn) => {
@@ -483,6 +499,23 @@
             peer.on('error', (err) => {
                 console.warn('Zapp P2P Error:', err.type);
             });
+        }
+
+        function connectAllContacts() {
+            Object.keys(contactsMap).forEach(contactId => {
+                connectToPeer(contactId);
+            });
+        }
+
+        async function checkAndReconnectPending() {
+            const contacts = Object.keys(contactsMap);
+            for (let contactId of contacts) {
+                const msgs = await getMessagesFromDB(contactId);
+                const hasPending = msgs.some(m => m.senderId === myUUID && m.status === 'waiting');
+                if (hasPending || !activeConnections[contactId] || !activeConnections[contactId].open) {
+                    connectToPeer(contactId);
+                }
+            }
         }
 
         function setupConnectionHandlers(conn) {
@@ -506,10 +539,15 @@
             conn.on('close', () => {
                 delete activeConnections[peerId];
             });
+
+            conn.on('error', () => {
+                delete activeConnections[peerId];
+            });
         }
 
         function connectToPeer(targetId) {
             if (activeConnections[targetId] && activeConnections[targetId].open) {
+                flushPendingMessages(targetId);
                 return activeConnections[targetId];
             }
             const conn = peer.connect(targetId, { reliable: true });
@@ -560,6 +598,7 @@
                     fileName: data.fileName || null,
                     fileSize: data.fileSize || null,
                     timestamp: data.timestamp,
+                    createdAt: data.createdAt || Date.now(),
                     status: 'sent'
                 };
 
@@ -577,8 +616,8 @@
                     renderMessages(senderId);
                 } else {
                     await saveMessageToDB(newMsg);
-                    renderContactsList();
                 }
+                renderContactsList();
             } else if (data.type === 'ACK_DELIVERED') {
                 await updateMessageStatusInDB(data.msgId, 'sent');
                 if (activeChatContactId) renderMessages(activeChatContactId);
@@ -593,7 +632,7 @@
             const pending = msgs.filter(m => m.senderId === myUUID && m.status === 'waiting');
             const conn = activeConnections[targetId];
 
-            if (conn && conn.open) {
+            if (conn && conn.open && pending.length > 0) {
                 for (let m of pending) {
                     conn.send({
                         type: 'CHAT_MSG',
@@ -603,7 +642,8 @@
                         fileType: m.fileType,
                         fileName: m.fileName,
                         fileSize: m.fileSize,
-                        timestamp: m.timestamp
+                        timestamp: m.timestamp,
+                        createdAt: m.createdAt || Date.now()
                     });
                 }
             }
@@ -727,6 +767,7 @@
             if (!activeChatContactId) return;
 
             const msgId = crypto.randomUUID();
+            const now = Date.now();
             const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const messageObj = {
@@ -739,6 +780,7 @@
                 fileName: fileObj ? fileObj.name : null,
                 fileSize: fileObj ? fileObj.size : null,
                 timestamp: timestamp,
+                createdAt: now,
                 status: 'waiting' // Initially waiting until P2P ACK received
             };
 
@@ -753,7 +795,8 @@
                     fileType: messageObj.fileType,
                     fileName: messageObj.fileName,
                     fileSize: messageObj.fileSize,
-                    timestamp: timestamp
+                    timestamp: timestamp,
+                    createdAt: now
                 });
             } else {
                 connectToPeer(activeChatContactId);
