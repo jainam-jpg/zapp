@@ -88,7 +88,7 @@
                         </div>
                         <div class="flex items-center space-x-1 mt-0.5" onclick="event.stopPropagation(); copyMyID();">
                             <span id="myUserIdDisplay" class="font-mono text-[11px] font-semibold text-slate-400 group-hover:underline truncate">ZP-XXXXXX</span>
-                            <svg class="w-3 h-3 text-slate-500 group-hover:text-zapp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <svg class="w-3 h-3 text-slate-500 group-hover:text-zapp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         </div>
                     </div>
                 </div>
@@ -169,8 +169,8 @@
                     </div>
                 </div>
 
-                <!-- Messages Box (Scrollable, Standard Chronological Top-to-Bottom Flow) -->
-                <div id="messagesBox" class="flex-1 overflow-y-auto p-4 space-y-3 chat-bg-pattern">
+                <!-- Messages Box (Scrollable, WhatsApp Top-to-Bottom Flow) -->
+                <div id="messagesBox" class="flex-1 overflow-y-auto p-4 space-y-3 chat-bg-pattern flex flex-col">
                     <!-- Dynamically Populated Messages -->
                 </div>
 
@@ -396,7 +396,7 @@
                 const request = index.getAll(chatId);
                 request.onsuccess = () => {
                     const msgs = request.result || [];
-                    // Ensure chronological sorting by createdAt timestamp
+                    // Ensure chronological sorting by createdAt timestamp (oldest first, newest last)
                     msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                     resolve(msgs);
                 };
@@ -481,14 +481,14 @@
                 document.getElementById('statusIndicator').className = 'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zapp-500 border-2 border-zapp-800 rounded-full shadow';
                 document.getElementById('statusIndicator').title = 'P2P Online';
 
-                // Automatically try connecting to all contacts to pull offline messages
+                // Automatically try connecting to all contacts to pull/push offline messages
                 connectAllContacts();
 
-                // Periodic check/reconnect loop every 8 seconds for pending unsent messages
+                // Periodic check/reconnect loop every 5 seconds for pending unsent messages
                 if (!window.peerSyncInterval) {
                     window.peerSyncInterval = setInterval(() => {
                         checkAndReconnectPending();
-                    }, 8000);
+                    }, 5000);
                 }
             });
 
@@ -522,18 +522,25 @@
             const peerId = conn.peer;
             activeConnections[peerId] = conn;
 
-            conn.on('open', () => {
-                // Exchange profile info on connect
+            const handleOpen = () => {
+                // Exchange profile info & flush offline messages on connect
                 conn.send({
                     type: 'PROFILE_SYNC',
                     senderName: myDisplayName,
                     senderDp: myDP
                 });
-                flushPendingMessages(peerId);
-            });
+                flushPendingMessages(peerId, conn);
+            };
+
+            // FIX: Check if connection is ALREADY open (PeerJS race-condition fix)
+            if (conn.open) {
+                handleOpen();
+            } else {
+                conn.on('open', handleOpen);
+            }
 
             conn.on('data', async (payload) => {
-                handleIncomingP2PData(payload, peerId);
+                handleIncomingP2PData(payload, peerId, conn);
             });
 
             conn.on('close', () => {
@@ -547,7 +554,7 @@
 
         function connectToPeer(targetId) {
             if (activeConnections[targetId] && activeConnections[targetId].open) {
-                flushPendingMessages(targetId);
+                flushPendingMessages(targetId, activeConnections[targetId]);
                 return activeConnections[targetId];
             }
             const conn = peer.connect(targetId, { reliable: true });
@@ -556,7 +563,7 @@
         }
 
         // --- P2P PAYLOAD DISPATCHER ---
-        async function handleIncomingP2PData(data, senderId) {
+        async function handleIncomingP2PData(data, senderId, conn) {
             if (data.type === 'PROFILE_SYNC') {
                 if (contactsMap[senderId]) {
                     if (data.senderDp) contactsMap[senderId].dp = data.senderDp;
@@ -566,6 +573,9 @@
                         updateActiveChatHeader(contactsMap[senderId]);
                     }
                 }
+                // Trigger sending any queued offline messages back to sender
+                flushPendingMessages(senderId, conn);
+
             } else if (data.type === 'FRIEND_REQUEST') {
                 const newReq = {
                     id: senderId,
@@ -575,6 +585,7 @@
                 };
                 await saveRequestToDB(newReq);
                 await loadRequests();
+
             } else if (data.type === 'FRIEND_ACCEPT') {
                 if (!contactsMap[senderId]) {
                     const newContact = {
@@ -587,6 +598,7 @@
                     contactsMap[senderId] = newContact;
                     renderContactsList();
                 }
+
             } else if (data.type === 'CHAT_MSG') {
                 const newMsg = {
                     id: data.id,
@@ -602,7 +614,6 @@
                     status: 'sent'
                 };
 
-                const conn = activeConnections[senderId];
                 if (conn && conn.open) {
                     conn.send({ type: 'ACK_DELIVERED', msgId: data.id });
                 }
@@ -618,19 +629,21 @@
                     await saveMessageToDB(newMsg);
                 }
                 renderContactsList();
+
             } else if (data.type === 'ACK_DELIVERED') {
                 await updateMessageStatusInDB(data.msgId, 'sent');
                 if (activeChatContactId) renderMessages(activeChatContactId);
+
             } else if (data.type === 'ACK_READ') {
                 await updateMessageStatusInDB(data.msgId, 'seen');
                 if (activeChatContactId) renderMessages(activeChatContactId);
             }
         }
 
-        async function flushPendingMessages(targetId) {
+        async function flushPendingMessages(targetId, customConn = null) {
             const msgs = await getMessagesFromDB(targetId);
             const pending = msgs.filter(m => m.senderId === myUUID && m.status === 'waiting');
-            const conn = activeConnections[targetId];
+            const conn = customConn || activeConnections[targetId];
 
             if (conn && conn.open && pending.length > 0) {
                 for (let m of pending) {
@@ -857,12 +870,26 @@
                 return;
             }
 
-            let html = '';
-            for (let c of contacts) {
+            // Fetch last message for sorting contacts (WhatsApp behavior)
+            const contactsWithLastMsg = await Promise.all(contacts.map(async (c) => {
                 const msgs = await getMessagesFromDB(c.id);
+                const lastMsgObj = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+                return {
+                    contact: c,
+                    lastMsgObj: lastMsgObj,
+                    lastTime: lastMsgObj ? (lastMsgObj.createdAt || 0) : (c.created_at || 0)
+                };
+            }));
+
+            // Sort contacts descending (latest active chat on top)
+            contactsWithLastMsg.sort((a, b) => b.lastTime - a.lastTime);
+
+            let html = '';
+            for (let item of contactsWithLastMsg) {
+                const c = item.contact;
+                const last = item.lastMsgObj;
                 let lastMsg = 'No messages yet';
-                if (msgs.length > 0) {
-                    const last = msgs[msgs.length - 1];
+                if (last) {
                     lastMsg = last.fileType ? `[${last.fileType.toUpperCase()}]` : last.text;
                 }
 
@@ -934,7 +961,17 @@
             renderContactsList();
         }
 
-        // Renders messages chronologically (latest on bottom) and auto-scrolls down
+        function scrollToBottom() {
+            const box = document.getElementById('messagesBox');
+            if (box) {
+                box.scrollTop = box.scrollHeight;
+                requestAnimationFrame(() => {
+                    box.scrollTop = box.scrollHeight;
+                });
+            }
+        }
+
+        // Renders messages chronologically (latest at bottom) and auto-scrolls down
         async function renderMessages(contactId) {
             if (activeChatContactId !== contactId) return;
             const box = document.getElementById('messagesBox');
@@ -976,11 +1013,7 @@
             });
 
             box.innerHTML = html;
-            
-            // Auto-scroll to bottom for WhatsApp behavior
-            setTimeout(() => {
-                box.scrollTop = box.scrollHeight;
-            }, 30);
+            scrollToBottom();
         }
 
         // --- CUSTOM STATUS BADGES (waiting, sent, seen) ---
