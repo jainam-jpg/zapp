@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHADOW NEXUS 3D - P2P Serverless Edition</title>
+    <title>SHADOW NEXUS 3D - Ultimate P2P Edition</title>
     <!-- PeerJS for Serverless P2P Networking -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -16,7 +16,7 @@
         }
 
         body {
-            background-color: #050508;
+            background-color: #030305;
             color: #fff;
             overflow: hidden;
             width: 100vw;
@@ -30,10 +30,10 @@
             width: 1280px;
             height: 720px;
             position: relative;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #080810 100%);
+            background: radial-gradient(circle at center, #151522 0%, #050508 100%);
             overflow: hidden;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), inset 0 0 100px rgba(0,0,0,0.8);
-            border: 2px solid #2a2a40;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), inset 0 0 100px rgba(0,0,0,0.8);
+            border: 2px solid #252538;
         }
 
         /* SCREENS */
@@ -47,9 +47,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(5, 5, 8, 0.95);
+            background: rgba(3, 3, 5, 0.96);
             z-index: 10;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.3s ease;
         }
 
         .hidden {
@@ -57,58 +57,69 @@
         }
 
         h1.title {
-            font-size: 4rem;
+            font-size: 3.8rem;
             letter-spacing: 6px;
             text-transform: uppercase;
             background: linear-gradient(135deg, #ff2a5f, #ff9e00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(255, 42, 95, 0.5);
-            margin-bottom: 10px;
+            text-shadow: 0 0 35px rgba(255, 42, 95, 0.4);
+            margin-bottom: 5px;
         }
 
         p.subtitle {
-            color: #8888aa;
-            font-size: 1.1rem;
-            margin-bottom: 40px;
+            color: #777799;
+            font-size: 1rem;
+            margin-bottom: 30px;
             letter-spacing: 2px;
         }
 
-        .menu-box {
-            background: #11111a;
-            border: 1px solid #2a2a40;
-            padding: 30px;
+        .menu-panel {
+            background: #0d0d14;
+            border: 1px solid #222238;
+            padding: 25px;
             border-radius: 12px;
-            width: 450px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 500px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: #8888aa;
+            display: block;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 14px;
-            background: #1a1a26;
-            border: 1px solid #3a3a5c;
+            padding: 12px 15px;
+            background: #141420;
+            border: 1px solid #2d2d4a;
             color: #fff;
             border-radius: 6px;
             font-size: 1rem;
-            margin-bottom: 15px;
             text-align: center;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             outline: none;
         }
 
         input[type="text"]:focus {
             border-color: #ff2a5f;
-            box-shadow: 0 0 10px rgba(255, 42, 95, 0.3);
+            box-shadow: 0 0 12px rgba(255, 42, 95, 0.3);
         }
 
         .btn {
             background: linear-gradient(135deg, #ff2a5f, #d4145a);
             color: white;
             border: none;
-            padding: 14px 28px;
-            font-size: 1rem;
+            padding: 12px 20px;
+            font-size: 0.95rem;
             font-weight: 700;
             border-radius: 6px;
             cursor: pointer;
@@ -126,34 +137,95 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #2a2a40, #1a1a2e);
-            border: 1px solid #4a4a7c;
+            background: linear-gradient(135deg, #1f1f30, #12121a);
+            border: 1px solid #3a3a5c;
             box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: linear-gradient(135deg, #3a3a5c, #2a2a40);
-            box-shadow: 0 4px 15px rgba(100, 100, 150, 0.3);
+            background: linear-gradient(135deg, #2a2a42, #1f1f30);
+            box-shadow: 0 4px 15px rgba(100, 100, 150, 0.2);
+        }
+
+        /* FRIENDS & LOBBY SYSTEM */
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            width: 900px;
+            height: 480px;
+        }
+
+        .pane {
+            flex: 1;
+            background: #0d0d14;
+            border: 1px solid #222238;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pane h3 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaaacc;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #222238;
+            padding-bottom: 8px;
+        }
+
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .list-item {
+            background: #141420;
+            border: 1px solid #252538;
+            padding: 10px 14px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .my-code-display {
+            background: #141420;
+            border: 2px dashed #ff2a5f;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #ff2a5f;
+            border-radius: 6px;
+            margin-bottom: 15px;
         }
 
         /* CHARACTER SELECT GRID */
         #char-select-screen {
-            padding: 40px;
+            padding: 30px;
         }
 
         .char-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            max-width: 1000px;
-            margin-bottom: 30px;
+            gap: 12px;
+            max-width: 950px;
+            margin-bottom: 25px;
         }
 
         .char-card {
-            background: #11111a;
-            border: 2px solid #2a2a40;
+            background: #0d0d14;
+            border: 2px solid #222238;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
@@ -161,33 +233,34 @@
 
         .char-card:hover, .char-card.selected {
             border-color: #ff2a5f;
-            background: #1a1a2e;
-            transform: translateY(-5px);
+            background: #161625;
+            transform: translateY(-4px);
             box-shadow: 0 5px 20px rgba(255, 42, 95, 0.4);
         }
 
         .char-avatar {
-            width: 70px;
-            height: 70px;
-            background: #080810;
+            width: 65px;
+            height: 65px;
+            background: #050508;
             border-radius: 50%;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            border: 2px solid #3a3a5c;
+            font-size: 1.6rem;
+            border: 2px solid #333350;
         }
 
         .char-name {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .char-stats {
-            font-size: 0.75rem;
-            color: #8888aa;
+            font-size: 0.7rem;
+            color: #777799;
+            line-height: 1.3;
         }
 
         /* 3D ARENA & HUD */
@@ -195,32 +268,31 @@
             position: relative;
             width: 100%;
             height: 100%;
-            perspective: 1000px;
+            perspective: 1200px;
             transform-style: preserve-3d;
-            background: linear-gradient(to bottom, #0d0d1a 0%, #030307 70%, #111118 100%);
+            background: linear-gradient(to bottom, #0a0a14 0%, #030307 70%, #0d0d12 100%);
         }
 
-        /* Cinematic Background Elements */
         .arena-bg {
             position: absolute;
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 50% 30%, rgba(50, 20, 80, 0.3) 0%, transparent 70%),
-                repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+                radial-gradient(ellipse at 50% 25%, rgba(60, 20, 90, 0.25) 0%, transparent 70%),
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,255,255,0.008) 50px, rgba(255,255,255,0.008) 51px);
         }
 
         .arena-floor {
             position: absolute;
             bottom: 0;
-            width: 200%;
-            left: -50%;
-            height: 280px;
-            background: linear-gradient(to bottom, #12121f 0%, #050508 100%);
+            width: 250%;
+            left: -75%;
+            height: 300px;
+            background: linear-gradient(to bottom, #141422 0%, #040407 100%);
             transform: rotateX(65deg);
             transform-origin: bottom center;
             border-top: 2px solid #ff2a5f;
-            box-shadow: inset 0 20px 40px rgba(0,0,0,0.9);
+            box-shadow: inset 0 30px 50px rgba(0,0,0,0.9);
         }
 
         /* HUD */
@@ -230,16 +302,16 @@
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 50px;
+            padding: 0 40px;
             z-index: 5;
             pointer-events: none;
         }
 
         .fighter-hud {
-            width: 45%;
+            width: 44%;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .fighter-hud.right {
@@ -250,17 +322,17 @@
             display: flex;
             justify-content: space-between;
             width: 100%;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-weight: 800;
+            font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .health-bar-container {
             width: 100%;
-            height: 26px;
-            background: #11111a;
-            border: 2px solid #3a3a5c;
+            height: 24px;
+            background: #0d0d14;
+            border: 2px solid #333350;
             border-radius: 4px;
             overflow: hidden;
             padding: 2px;
@@ -270,7 +342,7 @@
             height: 100%;
             background: linear-gradient(90deg, #ff2a5f, #ff7000);
             width: 100%;
-            transition: width 0.1s ease-out;
+            transition: width 0.08s ease-out;
             border-radius: 2px;
         }
 
@@ -280,10 +352,10 @@
         }
 
         .stamina-bar-container {
-            width: 60%;
-            height: 8px;
-            background: #11111a;
-            border: 1px solid #2a2a40;
+            width: 50%;
+            height: 6px;
+            background: #0d0d14;
+            border: 1px solid #222238;
             border-radius: 2px;
             overflow: hidden;
         }
@@ -300,28 +372,26 @@
             top: 25px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 900;
             color: #fff;
-            background: #11111a;
-            border: 2px solid #3a3a5c;
-            padding: 5px 20px;
-            border-radius: 8px;
+            background: #0d0d14;
+            border: 2px solid #333350;
+            padding: 4px 18px;
+            border-radius: 6px;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* COMBAT FIGHTERS (DOM 3D SHADOW RENDERERS) */
+        /* DETAILED CINEMATIC 3D SHADOW FIGHTERS */
         .fighter {
             position: absolute;
-            bottom: 120px;
-            width: 120px;
-            height: 260px;
+            bottom: 110px;
+            width: 130px;
+            height: 270px;
             transform-style: preserve-3d;
-            transition: transform 0.05s linear;
             will-change: left, transform;
         }
 
-        /* Shadow Silhouette Fighter Styling */
         .fighter-body {
             position: absolute;
             width: 100%;
@@ -330,25 +400,26 @@
             flex-direction: column;
             align-items: center;
             transform-style: preserve-3d;
+            transition: transform 0.1s ease;
         }
 
         .fighter-head {
-            width: 45px;
-            height: 45px;
-            background: #000;
-            border: 2px solid var(--theme-color, #ff2a5f);
+            width: 44px;
+            height: 44px;
+            background: #020204;
+            border: 2.5px solid var(--theme-color, #ff2a5f);
             border-radius: 50%;
-            box-shadow: 0 0 15px var(--theme-color, #ff2a5f);
-            margin-bottom: 5px;
+            box-shadow: 0 0 18px var(--theme-color, #ff2a5f);
+            margin-bottom: 4px;
         }
 
         .fighter-torso {
-            width: 70px;
-            height: 110px;
-            background: linear-gradient(135deg, #111, #000);
-            border: 2px solid var(--theme-color, #ff2a5f);
-            border-radius: 10px;
-            box-shadow: inset 0 0 15px rgba(255,255,255,0.1), 0 0 20px var(--theme-color, #ff2a5f);
+            width: 72px;
+            height: 115px;
+            background: linear-gradient(135deg, #0d0d14, #020204);
+            border: 2.5px solid var(--theme-color, #ff2a5f);
+            border-radius: 12px;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.08), 0 0 22px var(--theme-color, #ff2a5f);
             position: relative;
         }
 
@@ -359,18 +430,20 @@
             top: 0;
             left: 0;
             pointer-events: none;
+            transform-style: preserve-3d;
         }
 
         .limb {
             position: absolute;
-            background: #000;
-            border: 2px solid var(--theme-color, #ff2a5f);
-            box-shadow: 0 0 10px var(--theme-color, #ff2a5f);
+            background: #020204;
+            border: 2.5px solid var(--theme-color, #ff2a5f);
+            box-shadow: 0 0 12px var(--theme-color, #ff2a5f);
+            transition: transform 0.1s ease;
         }
 
         .arm-left, .arm-right {
-            width: 16px;
-            height: 80px;
+            width: 15px;
+            height: 85px;
             top: 55px;
             border-radius: 8px;
             transform-origin: top center;
@@ -380,52 +453,52 @@
         .arm-right { right: -14px; }
 
         .leg-left, .leg-right {
-            width: 18px;
-            height: 100px;
-            top: 160px;
+            width: 17px;
+            height: 105px;
+            top: 165px;
             border-radius: 8px;
             transform-origin: top center;
         }
 
-        .leg-left { left: 20px; }
-        .leg-right { right: 20px; }
+        .leg-left { left: 18px; }
+        .leg-right { right: 18px; }
 
-        /* Fighter Floor Shadow */
         .fighter-shadow {
             position: absolute;
-            bottom: -30px;
-            left: 10px;
+            bottom: -35px;
+            left: 15px;
             width: 100px;
             height: 30px;
-            background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%);
-            transform: rotateX(60deg);
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, transparent 75%);
+            transform: rotateX(65deg);
         }
 
-        /* Action Effects */
+        /* Attack Cinematic Impact Effects */
         .attack-effect {
             position: absolute;
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle, var(--theme-color, #ff2a5f) 0%, transparent 70%);
+            background: radial-gradient(circle, var(--theme-color, #ff2a5f) 0%, transparent 75%);
             opacity: 0;
             pointer-events: none;
-            transform: scale(0.5);
-            transition: all 0.15s ease-out;
+            transform: scale(0.4);
+            transition: all 0.12s ease-out;
+            z-index: 10;
         }
 
         .attack-effect.active {
-            opacity: 0.9;
-            transform: scale(1.5);
+            opacity: 0.95;
+            transform: scale(1.6);
         }
 
-        /* Notification / Modal Overlays */
+        /* Modal Overlays & Notifications */
         #announcement {
             position: absolute;
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            font-size: 4rem;
+            font-size: 3.5rem;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 4px;
@@ -434,19 +507,43 @@
             z-index: 100;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: none;
+            text-align: center;
         }
 
         #announcement.show {
             transform: translate(-50%, -50%) scale(1);
         }
 
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 3, 5, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .modal-box {
+            background: #0d0d14;
+            border: 2px solid #ff2a5f;
+            padding: 30px;
+            border-radius: 12px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 42, 95, 0.4);
+        }
+
         .controls-hint {
             position: absolute;
-            bottom: 20px;
+            bottom: 15px;
             width: 100%;
             text-align: center;
-            color: #666688;
-            font-size: 0.9rem;
+            color: #555577;
+            font-size: 0.85rem;
             letter-spacing: 1px;
             pointer-events: none;
         }
@@ -456,35 +553,52 @@
 
 <div id="game-container">
 
-    <!-- MAIN MENU SCREEN -->
-    <div id="menu-screen" class="screen">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="screen">
         <h1 class="title">Shadow Nexus</h1>
-        <p class="subtitle">Ultimate 3D Serverless P2P Combat</p>
-        <div class="menu-box">
-            <div id="connection-status" style="margin-bottom: 15px; font-size: 0.9rem; color: #ff9e00;">Initializing P2P Node...</div>
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px;">YOUR UNIQUE ID</label>
-                <input type="text" id="my-id-input" readonly placeholder="Generating ID...">
+        <p class="subtitle">Next-Gen 3D P2P Combat Engine</p>
+        <div class="menu-panel" style="width: 400px; text-align: center;">
+            <div class="input-group">
+                <label>Your Fighter Nickname</label>
+                <input type="text" id="username-input" placeholder="Enter Nickname" maxlength="12">
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px;">FRIEND'S ID</label>
-                <input type="text" id="friend-id-input" placeholder="Enter Friend's ID here">
+            <button class="btn" id="login-btn">Enter Hub</button>
+            <button class="btn btn-secondary" id="practice-login-btn" style="margin-top: 5px;">Solo Practice vs AI</button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD & FRIEND LOBBY -->
+    <div id="lobby-screen" class="screen hidden">
+        <h1 class="title" style="font-size: 2.5rem; margin-bottom: 20px;">Combat Lobby</h1>
+        <div class="dashboard">
+            <div class="pane">
+                <h3>Your 4-Digit Friend Code</h3>
+                <div class="my-code-display" id="my-short-code">----</div>
+                <p style="font-size: 0.8rem; color: #777799; text-align: center; margin-bottom: 20px;">Share this code with your friend so they can add you.</p>
+                
+                <h3 style="margin-top: auto;">Add Friend</h3>
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <input type="text" id="add-friend-input" placeholder="Enter 4-Digit Code" maxlength="4">
+                </div>
+                <button class="btn" id="send-req-btn">Send Friend Request</button>
             </div>
-            <button class="btn" id="connect-btn">Connect & Challenge</button>
-            <button class="btn btn-secondary" id="solo-btn">Practice vs AI</button>
+            <div class="pane">
+                <h3>Your Friends List</h3>
+                <div class="list-container" id="friends-list">
+                    <div style="color: #555577; text-align: center; margin-top: 40px; font-size: 0.85rem;">No friends added yet.</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- CHARACTER SELECT SCREEN -->
     <div id="char-select-screen" class="screen hidden">
-        <h1 class="title" style="font-size: 2.5rem; margin-bottom: 20px;">Choose Your Fighter</h1>
-        <div class="char-grid" id="char-grid">
-            <!-- 10 Characters Injected via JS -->
-        </div>
+        <h1 class="title" style="font-size: 2.3rem; margin-bottom: 15px;">Choose Your Warrior</h1>
+        <div class="char-grid" id="char-grid"></div>
         <button class="btn" id="start-fight-btn" style="width: 300px;" disabled>Select a Fighter</button>
     </div>
 
-    <!-- GAME ARENA SCREEN -->
+    <!-- 3D COMBAT ARENA SCREEN -->
     <div id="game-screen" class="screen hidden" style="justify-content: flex-start;">
         <div id="arena">
             <div class="arena-bg"></div>
@@ -520,7 +634,7 @@
             </div>
 
             <!-- FIGHTER 1 -->
-            <div id="fighter1" class="fighter" style="left: 150px;">
+            <div id="fighter1" class="fighter" style="left: 180px;">
                 <div class="fighter-body" id="f1-body">
                     <div class="fighter-head" id="f1-head"></div>
                     <div class="fighter-torso" id="f1-torso">
@@ -537,7 +651,7 @@
             </div>
 
             <!-- FIGHTER 2 -->
-            <div id="fighter2" class="fighter" style="right: 150px; left: auto;">
+            <div id="fighter2" class="fighter" style="right: 180px; left: auto;">
                 <div class="fighter-body" id="f2-body">
                     <div class="fighter-head" id="f2-head"></div>
                     <div class="fighter-torso" id="f2-torso">
@@ -554,109 +668,253 @@
             </div>
 
             <div id="announcement">FIGHT!</div>
-            <div class="controls-hint">A / D: Move | W: Jump | S: Block | J: Light Attack | K: Heavy Attack | L: Special Ability</div>
+            <div class="controls-hint">A / D: Move | W: Jump | S: Block | J: Light Strike | K: Heavy Strike</div>
         </div>
     </div>
 
 </div>
 
+<!-- INCOMING MODAL POPUP -->
+<div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3 id="modal-title" style="color: #ff2a5f; margin-bottom: 12px; font-size: 1.2rem; text-transform: uppercase;">Incoming Challenge</h3>
+        <p id="modal-desc" style="color: #aaaacc; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;"></p>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn" id="modal-accept-btn">Accept</button>
+            <button class="btn btn-secondary" id="modal-decline-btn">Decline</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    /* GAME DATA & 10 CHARACTERS DEFINITION */
+    /* 10 UNIQUE CHARACTERS WITH DISTINCT ANIMATION STYLES & STATS */
     const CHARACTERS = [
-        { id: 0, name: "Umbra Blade", icon: "🗡️", color: "#ff2a5f", hp: 1000, speed: 6, dmg: 45 },
-        { id: 1, name: "Kuro Samurai", icon: "⚔️", color: "#ff7000", hp: 1200, speed: 4.5, dmg: 65 },
-        { id: 2, name: "Viper Strike", icon: "🐍", color: "#00ff66", hp: 900, speed: 7.5, dmg: 40 },
-        { id: 3, name: "Iron Sentinel", icon: "🛡️", color: "#00f0ff", hp: 1400, speed: 3.5, dmg: 50 },
-        { id: 4, name: "Spectre Mage", icon: "🔮", color: "#9d00ff", hp: 850, speed: 6.5, dmg: 55 },
-        { id: 5, name: "Blood Fang", icon: "🦇", color: "#ff0055", hp: 950, speed: 6, dmg: 48 },
-        { id: 6, name: "Void Monarch", icon: "🌀", color: "#00ffff", hp: 1050, speed: 5.5, dmg: 52 },
-        { id: 7, name: "Solar Eclipse", icon: "☀️", color: "#ffcc00", hp: 1100, speed: 5, dmg: 58 },
-        { id: 8, name: "Ghost Monk", icon: "🧘", color: "#aa88ff", hp: 1000, speed: 6, dmg: 46 },
-        { id: 9, name: "Titan Fiend", icon: "👹", color: "#ff2222", hp: 1300, speed: 4, dmg: 70 }
+        { id: 0, name: "Umbra Blade", icon: "🗡️", color: "#ff2a5f", hp: 1050, speed: 6.2, dmg: 48, style: "katana" },
+        { id: 1, name: "Kuro Samurai", icon: "⚔️", color: "#ff7000", hp: 1250, speed: 4.8, dmg: 68, style: "heavy" },
+        { id: 2, name: "Viper Strike", icon: "🐍", color: "#00ff66", hp: 950, speed: 7.8, dmg: 42, style: "agile" },
+        { id: 3, name: "Iron Sentinel", icon: "🛡️", color: "#00f0ff", hp: 1400, speed: 3.6, dmg: 52, style: "tank" },
+        { id: 4, name: "Spectre Mage", icon: "🔮", color: "#9d00ff", hp: 900, speed: 6.8, dmg: 58, style: "mystic" },
+        { id: 5, name: "Blood Fang", icon: "🦇", color: "#ff0055", hp: 1000, speed: 6.4, dmg: 50, style: "berserker" },
+        { id: 6, name: "Void Monarch", icon: "🌀", color: "#00ffff", hp: 1100, speed: 5.6, dmg: 54, style: "monarch" },
+        { id: 7, name: "Solar Eclipse", icon: "☀️", color: "#ffcc00", hp: 1150, speed: 5.2, dmg: 60, style: "solar" },
+        { id: 8, name: "Ghost Monk", icon: "🧘", color: "#aa88ff", hp: 1050, speed: 6.0, dmg: 46, style: "monk" },
+        { id: 9, name: "Titan Fiend", icon: "👹", color: "#ff2222", hp: 1350, speed: 4.2, dmg: 72, style: "titan" }
     ];
 
     let peer = null;
-    let conn = null;
+    let myNick = '';
+    let myShortCode = '';
+    let activeConn = null;
     let isHost = false;
-    let myPeerId = '';
+    let friendsList = []; // Array of { nick, code }
+    let pendingCallback = null;
+
     let selectedChar = null;
     let opponentChar = null;
     let gameMode = 'p2p'; // 'p2p' or 'ai'
+    let matchActive = false;
 
     // Match State
-    let matchActive = false;
-    let p1 = { x: 200, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: 1, blocking: stabbing = false, attacking: false, char: null };
-    let p2 = { x: 960, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: -1, blocking: false, attacking: false, char: null };
+    let p1 = { x: 200, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: 1, blocking: false, attacking: false, attackTimer: 0, char: null };
+    let p2 = { x: 960, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: -1, blocking: false, attacking: false, attackTimer: 0, char: null };
     let keys = {};
     let timer = 99;
     let timerInterval = null;
 
-    // DOM Elements
-    const menuScreen = document.getElementById('menu-screen');
+    // DOM References
+    const loginScreen = document.getElementById('login-screen');
+    const lobbyScreen = document.getElementById('lobby-screen');
     const charSelectScreen = document.getElementById('char-select-screen');
     const gameScreen = document.getElementById('game-screen');
-    const myIdInput = document.getElementById('my-id-input');
-    const friendIdInput = document.getElementById('friend-id-input');
-    const connectBtn = document.getElementById('connect-btn');
-    const soloBtn = document.getElementById('solo-btn');
-    const connectionStatus = document.getElementById('connection-status');
+    const usernameInput = document.getElementById('username-input');
+    const loginBtn = document.getElementById('login-btn');
+    const practiceLoginBtn = document.getElementById('practice-login-btn');
+    const myShortCodeEl = document.getElementById('my-short-code');
+    const addFriendInput = document.getElementById('add-friend-input');
+    const sendReqBtn = document.getElementById('send-req-btn');
+    const friendsListEl = document.getElementById('friends-list');
     const charGrid = document.getElementById('char-grid');
     const startFightBtn = document.getElementById('start-fight-btn');
     const announcement = document.getElementById('announcement');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalAcceptBtn = document.getElementById('modal-accept-btn');
+    const modalDeclineBtn = document.getElementById('modal-decline-btn');
 
-    // INITIALIZE PEERJS
-    function initPeer() {
-        peer = new Peer();
-        peer.on('open', (id) => {
-            myPeerId = id;
-            myIdInput.value = id;
-            connectionStatus.textContent = "P2P Node Ready. Share ID or Connect!";
-            connectionStatus.style.color = "#00ff66";
+    // INITIALIZE PEERJS WITH 4-DIGIT SHORT CODE
+    function initUser(nick) {
+        myNick = nick;
+        // Generate random 4-digit code (e.g., "4821")
+        myShortCode = Math.floor(1000 + Math.random() * 9000).toString();
+        myShortCodeEl.textContent = myShortCode;
+
+        // Prefix peer ID to avoid collisions
+        peer = new Peer('shadow-nexus-' + myShortCode);
+
+        peer.on('open', () => {
+            loginScreen.classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
         });
 
-        peer.on('connection', (incomingConn) => {
-            conn = incomingConn;
-            isHost = false;
-            setupConnection();
-            connectionStatus.textContent = "Friend Connected! Choose Character.";
-            setTimeout(() => goToCharSelect(), 1000);
+        peer.on('connection', (conn) => {
+            setupIncomingConnection(conn);
         });
 
-        peer.on('error', (err) => {
-            connectionStatus.textContent = "Connection Error. Try refreshing.";
-            connectionStatus.style.color = "#ff2a5f";
+        peer.on('error', () => {
+            // If 4-digit code collides, regenerate quickly
+            peer.destroy();
+            initUser(nick);
         });
     }
 
-    function setupConnection() {
-        conn.on('data', (data) => {
-            handleNetworkData(data);
-        });
-        conn.on('close', () => {
-            alert("Opponent disconnected!");
-            location.reload();
-        });
-    }
-
-    connectBtn.addEventListener('click', () => {
-        const friendId = friendIdInput.value.trim();
-        if (!friendId) return alert("Please enter your friend's ID!");
-        connectionStatus.textContent = "Connecting to Friend...";
-        conn = peer.connect(friendId);
-        isHost = true;
-        setupConnection();
-        conn.on('open', () => {
-            connectionStatus.textContent = "Connected! Choose Character.";
-            setTimeout(() => goToCharSelect(), 1000);
-        });
+    loginBtn.addEventListener('click', () => {
+        const val = usernameInput.value.trim();
+        if (!val) return alert("Please enter your nickname!");
+        initUser(val);
     });
 
-    soloBtn.addEventListener('click', () => {
+    practiceLoginBtn.addEventListener('click', () => {
+        const val = usernameInput.value.trim() || "Warrior";
+        myNick = val;
         gameMode = 'ai';
+        loginScreen.classList.add('hidden');
         goToCharSelect();
     });
 
-    // CHARACTER SELECTION SETUP
+    // P2P CONNECTION HANDLING & FRIEND REQUESTS
+    function setupIncomingConnection(conn) {
+        conn.on('data', (data) => {
+            handlePeerData(conn, data);
+        });
+    }
+
+    sendReqBtn.addEventListener('click', () => {
+        const targetCode = addFriendInput.value.trim();
+        if (targetCode.length !== 4) return alert("Please enter a valid 4-digit friend code.");
+        if (targetCode === myShortCode) return alert("You cannot add yourself!");
+
+        addFriendInput.value = '';
+        const conn = peer.connect('shadow-nexus-' + targetCode);
+        
+        conn.on('open', () => {
+            conn.send({ type: 'friend-request', nick: myNick, code: myShortCode });
+            alert("Friend request sent!");
+        });
+
+        conn.on('error', () => {
+            alert("Could not reach player with code " + targetCode);
+        });
+
+        setupIncomingConnection(conn);
+    });
+
+    function handlePeerData(conn, data) {
+        activeConn = conn;
+        if (data.type === 'friend-request') {
+            showModal(
+                "Friend Request",
+                `${data.nick} (Code: ${data.code}) sent you a friend request!`,
+                () => {
+                    // Accept
+                    if (!friendsList.some(f => f.code === data.code)) {
+                        friendsList.push({ nick: data.nick, code: data.code });
+                        renderFriendsList();
+                    }
+                    conn.send({ type: 'friend-accept', nick: myNick, code: myShortCode });
+                },
+                () => {
+                    conn.send({ type: 'friend-decline' });
+                }
+            );
+        } else if (data.type === 'friend-accept') {
+            if (!friendsList.some(f => f.code === data.code)) {
+                friendsList.push({ nick: data.nick, code: data.code });
+                renderFriendsList();
+            }
+            alert(`${data.nick} accepted your friend request!`);
+        } else if (data.type === 'friend-decline') {
+            alert("Friend request declined.");
+        } else if (data.type === 'match-challenge') {
+            showModal(
+                "Match Challenge",
+                `${data.nick} has challenged you to a 3D Shadow Fight!`,
+                () => {
+                    conn.send({ type: 'challenge-accept' });
+                    gameMode = 'p2p';
+                    isHost = false;
+                    goToCharSelect();
+                },
+                () => {
+                    conn.send({ type: 'challenge-decline' });
+                }
+            );
+        } else if (data.type === 'challenge-accept') {
+            alert("Challenge accepted! Starting match...");
+            gameMode = 'p2p';
+            isHost = true;
+            goToCharSelect();
+        } else if (data.type === 'challenge-decline') {
+            alert("Your challenge was declined.");
+        } else if (data.type === 'char-select') {
+            opponentChar = data.char;
+            p2.char = opponentChar;
+            p2.hp = opponentChar.hp;
+            p2.maxHp = opponentChar.hp;
+            if (selectedChar) initGameArena();
+        } else if (data.type === 'update-state') {
+            if (!isHost) {
+                p1.x = data.p1.x; p1.y = data.p1.y; p1.hp = data.p1.hp; p1.stamina = data.p1.stamina; p1.blocking = data.p1.blocking; p1.attacking = data.p1.attacking; p1.attackTimer = data.p1.attackTimer;
+                p2.x = data.p2.x; p2.y = data.p2.y; p2.hp = data.p2.hp; p2.stamina = data.p2.stamina; p2.blocking = data.p2.blocking; p2.attacking = data.p2.attacking; p2.attackTimer = data.p2.attackTimer;
+            }
+        } else if (data.type === 'action-attack') {
+            if (isHost) triggerAttack(p2, p1, p2.char.dmg, 'f2-effect');
+        }
+    }
+
+    function renderFriendsList() {
+        friendsListEl.innerHTML = '';
+        if (friendsList.length === 0) {
+            friendsListEl.innerHTML = `<div style="color: #555577; text-align: center; margin-top: 40px; font-size: 0.85rem;">No friends added yet.</div>`;
+            return;
+        }
+        friendsList.forEach(f => {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `
+                <span><b>${f.nick}</b> <span style="color:#777; font-size:0.8rem;">(#${f.code})</span></span>
+                <button class="btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; margin:0;" onclick="challengeFriend('${f.code}')">Challenge</button>
+            `;
+            friendsListEl.appendChild(item);
+        });
+    }
+
+    window.challengeFriend = function(code) {
+        const conn = peer.connect('shadow-nexus-' + code);
+        activeConn = conn;
+        conn.on('open', () => {
+            conn.send({ type: 'match-challenge', nick: myNick, code: myShortCode });
+            alert("Challenge sent! Waiting for response...");
+        });
+        setupIncomingConnection(conn);
+    };
+
+    function showModal(title, desc, onAccept, onDecline) {
+        modalTitle.textContent = title;
+        modalDesc.textContent = desc;
+        modalOverlay.classList.remove('hidden');
+        
+        modalAcceptBtn.onclick = () => {
+            modalOverlay.classList.add('hidden');
+            if (onAccept) onAccept();
+        };
+        modalDeclineBtn.onclick = () => {
+            modalOverlay.classList.add('hidden');
+            if (onDecline) onDecline();
+        };
+    }
+
+    // CHARACTER SELECTION
     function buildCharGrid() {
         charGrid.innerHTML = '';
         CHARACTERS.forEach(c => {
@@ -672,14 +930,14 @@
                 card.classList.add('selected');
                 selectedChar = c;
                 startFightBtn.disabled = false;
-                startFightBtn.textContent = `Fight with ${c.name}`;
+                startFightBtn.textContent = `Select ${c.name}`;
             };
             charGrid.appendChild(card);
         });
     }
 
     function goToCharSelect() {
-        menuScreen.classList.add('hidden');
+        lobbyScreen.classList.add('hidden');
         charSelectScreen.classList.remove('hidden');
         buildCharGrid();
     }
@@ -690,13 +948,12 @@
         p1.hp = selectedChar.hp;
         p1.maxHp = selectedChar.hp;
 
-        if (gameMode === 'p2p' && conn) {
-            conn.send({ type: 'char-select', char: selectedChar });
-            startFightBtn.textContent = "Waiting for Friend...";
+        if (gameMode === 'p2p' && activeConn) {
+            activeConn.send({ type: 'char-select', char: selectedChar });
+            startFightBtn.textContent = "Waiting for Opponent...";
             startFightBtn.disabled = true;
-            checkBothReady();
+            if (opponentChar) initGameArena();
         } else {
-            // AI Mode opponent selection
             const randIdx = Math.floor(Math.random() * CHARACTERS.length);
             opponentChar = CHARACTERS[randIdx];
             p2.char = opponentChar;
@@ -706,52 +963,11 @@
         }
     });
 
-    function checkBothReady() {
-        if (selectedChar && opponentChar) {
-            initGameArena();
-        }
-    }
-
-    function handleNetworkData(data) {
-        if (data.type === 'char-select') {
-            opponentChar = data.char;
-            p2.char = opponentChar;
-            p2.hp = opponentChar.hp;
-            p2.maxHp = opponentChar.hp;
-            if (selectedChar) {
-                conn.send({ type: 'char-select', char: selectedChar });
-                initGameArena();
-            }
-        } else if (data.type === 'update-state') {
-            if (!isHost) {
-                // Sync P1 state from host
-                p1.x = data.p1.x;
-                p1.y = data.p1.y;
-                p1.hp = data.p1.hp;
-                p1.stamina = data.p1.stamina;
-                p1.blocking = data.p1.blocking;
-                p1.attacking = data.p1.attacking;
-                p2.x = data.p2.x;
-                p2.y = data.p2.y;
-                p2.hp = data.p2.hp;
-                p2.stamina = data.p2.stamina;
-                p2.blocking = data.p2.blocking;
-                p2.attacking = data.p2.attacking;
-            }
-        } else if (data.type === 'action') {
-            if (isHost && data.action === 'attack') {
-                // Handle client attack received on host
-                triggerAttack(p2, p1);
-            }
-        }
-    }
-
     // GAME ARENA START
     function initGameArena() {
         charSelectScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
 
-        // Apply visual themes
         document.getElementById('f1-body').style.setProperty('--theme-color', p1.char.color);
         document.getElementById('f2-body').style.setProperty('--theme-color', p2.char.color);
         document.getElementById('p1-name').textContent = p1.char.name;
@@ -772,41 +988,40 @@
             timer--;
             document.getElementById('match-timer').textContent = timer;
             if (timer <= 0) {
-                endMatch(p1.hp >= p2.hp ? "Player 1 Wins on Time!" : "Player 2 Wins on Time!");
+                endMatch(p1.hp >= p2.hp ? `${p1.char.name} Wins on Time!` : `${p2.char.name} Wins on Time!`);
             }
         }, 1000);
     }
 
-    // INPUT LISTENERS
     window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
     window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-    // COMBAT ENGINE & LOOP
+    // COMBAT LOOP & ANIMATION ENGINE
     function gameLoop() {
         if (!matchActive) return;
 
-        updatePlayerPhysics();
+        updatePhysics();
         if (gameMode === 'ai') updateAI();
         updateHUD();
-        renderFighters();
+        renderFightersWithAnimations();
 
-        if (gameMode === 'p2p' && isHost && conn) {
-            conn.send({
+        if (gameMode === 'p2p' && isHost && activeConn) {
+            activeConn.send({
                 type: 'update-state',
-                p1: { x: p1.x, y: p1.y, hp: p1.hp, stamina: p1.stamina, blocking: p1.blocking, attacking: p1.attacking },
-                p2: { x: p2.x, y: p2.y, hp: p2.hp, stamina: p2.stamina, blocking: p2.blocking, attacking: p2.attacking }
+                p1: { x: p1.x, y: p1.y, hp: p1.hp, stamina: p1.stamina, blocking: p1.blocking, attacking: p1.attacking, attackTimer: p1.attackTimer },
+                p2: { x: p2.x, y: p2.y, hp: p2.hp, stamina: p2.stamina, blocking: p2.blocking, attacking: p2.attacking, attackTimer: p2.attackTimer }
             });
         }
 
         requestAnimationFrame(gameLoop);
     }
 
-    function updatePlayerPhysics() {
-        // P1 Controls (WASD + J/K/L)
+    function updatePhysics() {
+        // P1 Controls (WASD + J/K)
         if (isHost || gameMode === 'ai') {
             if (keys['a']) { p1.x -= p1.char.speed; p1.facing = -1; }
             if (keys['d']) { p1.x += p1.char.speed; p1.facing = 1; }
-            if (keys['w'] && p1.y === 0) { p1.vy = 16; } // Jump
+            if (keys['w'] && p1.y === 0) { p1.vy = 17; }
             
             p1.blocking = keys['s'];
 
@@ -819,71 +1034,64 @@
                 p1.stamina -= 35;
             }
         } else {
-            // Client controls mapped to P2 in P2P mode
+            // Client P2 Controls
             if (keys['a']) { p2.x -= p2.char.speed; p2.facing = -1; }
             if (keys['d']) { p2.x += p2.char.speed; p2.facing = 1; }
-            if (keys['w'] && p2.y === 0) { p2.vy = 16; }
+            if (keys['w'] && p2.y === 0) { p2.vy = 17; }
             
             p2.blocking = keys['s'];
 
             if (keys['j'] && !p2.attacking && p2.stamina >= 15) {
-                conn.send({ type: 'action', action: 'attack' });
+                activeConn.send({ type: 'action-attack' });
                 performAttack(p2, p1, p2.char.dmg, 'f2-effect');
                 p2.stamina -= 15;
             }
         }
 
-        // Gravity & Boundaries
         [p1, p2].forEach(p => {
             p.y += p.vy;
-            if (p.y > 0) p.vy -= 1.2; // Gravity
+            if (p.y > 0) p.vy -= 1.3;
             if (p.y <= 0) { p.y = 0; p.vy = 0; }
 
-            // Arena bounds
-            if (p.x < 50) p.x = 50;
-            if (p.x > 1150) p.x = 1150;
+            if (p.x < 40) p.x = 40;
+            if (p.x > 1160) p.x = 1160;
 
-            // Stamina regen
-            if (p.stamina < 100) p.stamina += 0.5;
+            if (p.stamina < 100) p.stamina += 0.55;
+            if (p.attackTimer > 0) p.attackTimer--;
         });
 
-        // Face each other
         if (p1.x < p2.x) { p1.facing = 1; p2.facing = -1; }
         else { p1.facing = -1; p2.facing = 1; }
     }
 
     function performAttack(attacker, defender, damage, effectId) {
         attacker.attacking = true;
-        setTimeout(() => attacker.attacking = false, 250);
+        attacker.attackTimer = 18;
+        setTimeout(() => attacker.attacking = false, 280);
 
-        // Visual effect trigger
         const fx = document.getElementById(effectId);
-        fx.style.left = (attacker.x + (attacker.facing * 50)) + 'px';
-        fx.style.bottom = (attacker.y + 80) + 'px';
+        fx.style.left = (attacker.x + (attacker.facing * 55)) + 'px';
+        fx.style.bottom = (attacker.y + 90) + 'px';
         fx.classList.add('active');
-        setTimeout(() => fx.classList.remove('active'), 150);
+        setTimeout(() => fx.classList.remove('active'), 140);
 
-        // Collision check
         const dist = Math.abs(attacker.x - defender.x);
-        if (dist < 110) {
-            if (defender.blocking) {
-                damage *= 0.2; // Block reduces 80% damage
-            }
+        if (dist < 120) {
+            if (defender.blocking) damage *= 0.25;
             defender.hp -= damage;
             if (defender.hp <= 0) {
                 defender.hp = 0;
-                endMatch(attacker === p1 ? "Player 1 Wins!" : "Player 2 Wins!");
+                endMatch(`${attacker.char.name} Wins!`);
             }
         }
     }
 
     function updateAI() {
-        // Simple reactive AI for solo practice
         const dist = p1.x - p2.x;
-        if (Math.abs(dist) > 90) {
-            p2.x += (dist > 0 ? 1 : -1) * (p2.char.speed * 0.7);
+        if (Math.abs(dist) > 100) {
+            p2.x += (dist > 0 ? 1 : -1) * (p2.char.speed * 0.75);
         } else {
-            if (Math.random() < 0.03 && !p2.attacking) {
+            if (Math.random() < 0.035 && !p2.attacking) {
                 performAttack(p2, p1, p2.char.dmg, 'f2-effect');
             }
         }
@@ -899,17 +1107,62 @@
         document.getElementById('p2-stamina').style.width = `${p2.stamina}%`;
     }
 
-    function renderFighters() {
-        const f1El = document.getElementById('fighter1');
-        const f2El = document.getElementById('fighter2');
+    // CINEMATIC PROCEDURAL LIMB ANIMATIONS
+    function renderFightersFor(p, fId) {
+        const el = document.getElementById(fId);
+        const body = document.getElementById(fId.replace('fighter', 'f') + '-body');
+        const armL = document.getElementById(fId.replace('fighter', 'f') + '-arm-l');
+        const armR = document.getElementById(fId.replace('fighter', 'f') + '-arm-r');
+        const legL = document.getElementById(fId.replace('fighter', 'f') + '-leg-l');
+        const legR = document.getElementById(fId.replace('fighter', 'f') + '-leg-r');
 
-        f1El.style.left = `${p1.x}px`;
-        f1El.style.bottom = `${120 + p1.y}px`;
-        f1El.style.transform = `scaleX(${p1.facing})`;
+        el.style.left = `${p.x}px`;
+        el.style.bottom = `${110 + p.y}px`;
+        el.style.transform = `scaleX(${p.facing})`;
 
-        f2El.style.left = `${p2.x}px`;
-        f2El.style.bottom = `${120 + p2.y}px`;
-        f2El.style.transform = `scaleX(${p2.facing})`;
+        const time = Date.now() * 0.015;
+        let bodyTilt = 0;
+        let armRotL = 0;
+        let armRotR = 0;
+        let legRotL = 0;
+        let legRotR = 0;
+
+        if (p.y > 0) {
+            // Jumping pose
+            bodyTilt = -10;
+            armRotL = -45;
+            armRotR = 45;
+            legRotL = 30;
+            legRotR = -30;
+        } else if (p.attacking) {
+            // Unique attacking strike animation
+            bodyTilt = 15;
+            armRotL = 75;
+            armRotR = 90;
+        } else if (p.blocking) {
+            // Defensive shield guard pose
+            bodyTilt = -5;
+            armRotL = -60;
+            armRotR = -60;
+        } else {
+            // Breathing idle & walking tilt
+            bodyTilt = Math.sin(time * 0.5) * 3;
+            armRotL = Math.sin(time) * 15;
+            armRotR = -Math.sin(time) * 15;
+            legRotL = Math.sin(time * 0.8) * 20;
+            legRotR = -Math.sin(time * 0.8) * 20;
+        }
+
+        body.style.transform = `rotate(${bodyTilt}deg)`;
+        armL.style.transform = `rotate(${armRotL}deg)`;
+        armR.style.transform = `rotate(${armRotR}deg)`;
+        legL.style.transform = `rotate(${legRotL}deg)`;
+        legR.style.transform = `rotate(${legRotR}deg)`;
+    }
+
+    function renderFightersWithAnimations() {
+        renderFightersFor(p1, 'fighter1');
+        renderFightersFor(p2, 'fighter2');
     }
 
     function endMatch(msg) {
@@ -919,11 +1172,8 @@
         announcement.classList.add('show');
         setTimeout(() => {
             location.reload();
-        }, 3000);
+        }, 3500);
     }
-
-    // Run Peer init on load
-    initPeer();
 </script>
 
 </body>
