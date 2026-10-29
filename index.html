@@ -1,1194 +1,560 @@
 <!DOCTYPE html>
-<html lang="en" class="dark h-full">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#111b21">
-    <title>Zapp — Modern P2P Encrypted Messenger</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PeerJS for WebRTC P2P Connections -->
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        zapp: {
-                            50: '#e6f7f2',
-                            400: '#10b981',
-                            500: '#00a884', // WhatsApp modern green
-                            600: '#008069',
-                            800: '#111b21', // Dark sidebar background
-                            900: '#0b141a', // Main chat dark background
-                        },
-                        bubble: {
-                            out: '#005c4b', // Sent message bubble
-                            in: '#202c33',  // Received message bubble
-                            hover: '#2a3942'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .app-height {
-            height: 100vh;
-            height: 100dvh;
-        }
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .glass-header {
-            background: rgba(17, 27, 33, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .chat-bg-pattern {
-            background-color: #0b141a;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-            background-size: 24px 24px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaP2P - Pure Jugaad Serverless Social</title>
+  
+  <!-- CDN Libraries: GunDB (P2P DB) & PeerJS (WebRTC Direct Channels) -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <style>
+    :root {
+      --bg-color: #000000;
+      --card-bg: #121212;
+      --border-color: #262626;
+      --text-color: #f5f5f5;
+      --muted-text: #a8a8a8;
+      --accent-color: #0095f6;
+      --like-color: #ff3040;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+
+    #app-container { width: 100%; max-width: 470px; height: 100vh; display: flex; flex-direction: column; background-color: #000; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; }
+
+    /* AUTH MODAL */
+    .auth-overlay { position: absolute; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; }
+    .auth-overlay h1 { font-size: 2.2rem; margin-bottom: 25px; font-style: italic; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .auth-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .auth-input { width: 100%; padding: 14px; background: #121212; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; outline: none; }
+    .auth-btn { width: 100%; padding: 12px; background: var(--accent-color); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    /* HEADER */
+    header { height: 60px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #000; z-index: 10; }
+    header h2 { font-style: italic; font-size: 1.5rem; }
+
+    /* MAIN VIEWPORT */
+    main { flex: 1; overflow-y: auto; padding-bottom: 70px; scrollbar-width: none; }
+    main::-webkit-scrollbar { display: none; }
+
+    /* FEED POST */
+    .post-card { border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+    .post-header { display: flex; align-items: center; padding: 10px 14px; gap: 10px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #bc1888); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; color: #fff; }
+    .post-username { font-weight: 600; font-size: 0.95rem; }
+    .post-media { width: 100%; max-height: 470px; background: #050505; object-fit: contain; display: block; }
+    .post-actions { display: flex; gap: 16px; padding: 10px 14px; }
+    .action-icon { cursor: pointer; transition: transform 0.1s; }
+    .action-icon:active { transform: scale(0.85); }
+    .action-icon.liked { color: var(--like-color); fill: var(--like-color); }
+    .post-likes { padding: 0 14px; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+    .post-caption { padding: 0 14px 10px 14px; font-size: 0.9rem; word-break: break-word; }
+    .post-caption span { font-weight: 600; margin-right: 6px; }
+
+    /* COMMENTS SECTION */
+    .post-comments { padding: 0 14px 10px; font-size: 0.85rem; color: var(--muted-text); }
+    .comment-item { margin-top: 4px; color: var(--text-color); }
+    .comment-item strong { margin-right: 5px; }
+
+    /* BOTTOM NAV */
+    nav { height: 50px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; background: #000; position: absolute; bottom: 0; width: 100%; z-index: 10; }
+    nav .nav-item { cursor: pointer; color: var(--muted-text); }
+    nav .nav-item.active { color: var(--text-color); }
+
+    /* PANELS (SEARCH, CREATE, CHAT, PROFILE) */
+    .panel { display: none; padding: 16px; height: 100%; }
+    .panel.active { display: block; }
+
+    /* SEARCH PANEL */
+    .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
+    .search-results { display: flex; flex-direction: column; gap: 12px; }
+    .user-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px; border-radius: 8px; }
+
+    /* CREATE POST PANEL */
+    .create-form { display: flex; flex-direction: column; gap: 15px; }
+    .file-input-label { border: 2px dashed var(--border-color); padding: 30px; text-align: center; border-radius: 8px; cursor: pointer; color: var(--muted-text); }
+    #preview-container { width: 100%; max-height: 250px; overflow: hidden; border-radius: 8px; display: none; }
+    #preview-container img, #preview-container video { width: 100%; height: 100%; object-fit: cover; }
+
+    /* CHAT PANEL */
+    .chat-list { display: flex; flex-direction: column; gap: 10px; }
+    .chat-window { display: none; flex-direction: column; height: 100%; position: absolute; inset: 0; background: #000; z-index: 20; }
+    .chat-window.active { display: flex; }
+    .chat-header { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; word-break: break-word; }
+    .msg.sent { align-self: flex-end; background: var(--accent-color); color: #fff; }
+    .msg.received { align-self: flex-start; background: var(--card-bg); color: #fff; }
+    .chat-input-bar { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; }
+
+    /* BUTTONS */
+    .btn-sm { padding: 6px 12px; background: var(--accent-color); border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
+    .btn-secondary { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+  </style>
 </head>
-<body class="bg-zapp-900 text-slate-100 app-height flex flex-col font-sans overflow-hidden antialiased select-none">
+<body>
 
-    <!-- MAIN APP CONTAINER -->
-    <div id="app" class="flex flex-1 w-full h-full relative overflow-hidden">
+<div id-="app-container">
+  
+  <!-- AUTH MODAL -->
+  <div class="auth-overlay" id="auth-modal">
+    <h1>Instagram P2P</h1>
+    <div class="auth-form">
+      <input type="text" id="username-input" class="auth-input" placeholder="Choose unique username..." />
+      <input type="password" id="password-input" class="auth-input" placeholder="Password (for key derivation)..." />
+      <button class="auth-btn" onclick="registerOrLogin()">Enter / Register ID</button>
+      <p id="auth-error" style="color:red; font-size:0.8rem; text-align:center; display:none;">Name taken or invalid!</p>
+    </div>
+  </div>
 
-        <!-- SIDEBAR: CONTACTS & PROFILE -->
-        <aside id="sidebar" class="w-full md:w-80 lg:w-96 bg-zapp-800 border-r border-slate-800 flex flex-col z-20 transition-transform duration-300 absolute md:relative inset-0 md:translate-x-0">
-            
-            <!-- Profile Header -->
-            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between glass-header">
-                <div class="flex items-center space-x-3 cursor-pointer group" onclick="openProfileModal()" title="Edit Profile & Display Picture">
-                    <div class="relative flex-shrink-0">
-                        <div id="myAvatarContainer" class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-700 flex items-center justify-center font-bold text-white text-lg overflow-hidden border border-slate-700 shadow">
-                            <span id="userAvatarLetter">Z</span>
-                            <img id="userAvatarImg" class="w-full h-full object-cover hidden" alt="DP">
-                        </div>
-                        <span id="statusIndicator" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-500 border-2 border-zapp-800 rounded-full" title="Connecting to P2P network..."></span>
-                    </div>
-                    <div class="flex flex-col min-w-0">
-                        <div class="flex items-center space-x-1.5">
-                            <span id="myDisplayName" class="font-bold text-sm tracking-wide text-slate-100 truncate group-hover:text-zapp-400 transition">My Profile</span>
-                            <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-zapp-500/20 text-zapp-400 border border-zapp-500/30">P2P</span>
-                        </div>
-                        <div class="flex items-center space-x-1 mt-0.5" onclick="event.stopPropagation(); copyMyID();">
-                            <span id="myUserIdDisplay" class="font-mono text-[11px] font-semibold text-slate-400 group-hover:underline truncate">ZP-XXXXXX</span>
-                            <svg class="w-3 h-3 text-slate-500 group-hover:text-zapp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 002-2h8a2 2 0 002 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        </div>
-                    </div>
-                </div>
+  <!-- HEADER -->
+  <header>
+    <h2>Instagram</h2>
+    <div style="display:flex; gap:12px;">
+      <i data-feather="heart" class="action-icon"></i>
+      <i data-feather="send" class="action-icon" onclick="switchTab('chats')"></i>
+    </div>
+  </header>
 
-                <div class="flex items-center space-x-1">
-                    <!-- Notifications -->
-                    <button onclick="openNotificationsModal()" class="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition focus:outline-none" title="Notifications">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="notifBadge" class="hidden absolute top-1 right-1 w-4 h-4 bg-zapp-500 text-slate-950 text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
-                    </button>
-
-                    <!-- Add Contact -->
-                    <button onclick="openAddContactModal()" class="p-2 rounded-xl text-zapp-400 hover:bg-zapp-500/10 transition focus:outline-none" title="Add Contact">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Contacts Search -->
-            <div class="px-3 py-2.5 border-b border-slate-800/80 bg-zapp-900/50">
-                <input type="text" id="contactSearchInput" oninput="filterContacts()" placeholder="Search chats..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-zapp-500/50 transition">
-            </div>
-
-            <!-- Contacts List -->
-            <div id="contactsList" class="flex-1 overflow-y-auto divide-y divide-slate-800/30">
-                <div class="p-8 text-center text-slate-500 text-xs">
-                    No chats found.<br>Click <b>+</b> to send a friend request.
-                </div>
-            </div>
-        </aside>
-
-        <!-- ACTIVE CHAT WINDOW -->
-        <main id="chatWindow" class="flex-1 flex flex-col bg-zapp-900 w-full h-full absolute md:relative inset-0 translate-x-full md:translate-x-0 transition-transform duration-300 z-30">
-            
-            <!-- Unselected State Placeholder -->
-            <div id="noChatSelected" class="flex-1 flex flex-col items-center justify-center p-6 text-center chat-bg-pattern">
-                <div class="w-20 h-20 rounded-2xl bg-zapp-500/10 border border-zapp-500/20 flex items-center justify-center mb-4 text-zapp-400 shadow-xl">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                </div>
-                <h2 class="text-xl font-bold text-slate-100 mb-1">Zapp Web Messenger</h2>
-                <p class="text-slate-400 text-xs max-w-sm leading-relaxed">Direct WebRTC peer-to-peer encrypted messaging. Select a contact or add a new friend to start chatting.</p>
-            </div>
-
-            <!-- Active Chat Interface -->
-            <div id="activeChat" class="hidden flex-1 flex flex-col h-full overflow-hidden relative">
-                
-                <!-- Chat Header -->
-                <div class="px-4 py-2.5 bg-zapp-800 border-b border-slate-800 flex items-center justify-between shadow-md z-20 glass-header">
-                    <div class="flex items-center space-x-3">
-                        <button onclick="closeActiveChat()" class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center font-bold text-white text-sm shadow overflow-hidden border border-slate-700">
-                            <span id="activeContactAvatarText">C</span>
-                            <img id="activeContactAvatarImg" class="w-full h-full object-cover hidden" alt="Contact DP">
-                        </div>
-                        <div class="flex flex-col">
-                            <span id="activeContactName" class="font-semibold text-slate-100 text-sm leading-tight">Contact Name</span>
-                            <span id="activeContactId" class="font-mono text-[11px] text-zapp-400">ID: ZP-XXXXXX</span>
-                        </div>
-                    </div>
-
-                    <!-- 3-Dots Menu Dropdown -->
-                    <div class="relative">
-                        <button onclick="toggleChatMenu()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition focus:outline-none" title="Options">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                        </button>
-                        <div id="chatMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-zapp-800 border border-slate-700 rounded-xl shadow-2xl py-1 z-50">
-                            <button onclick="openRenameContactModal()" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700/60 flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                <span>Rename Contact</span>
-                            </button>
-                            <button onclick="deleteCurrentContact()" class="w-full text-left px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span>Delete Contact</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Messages Box -->
-                <div id="messagesBox" class="flex-1 overflow-y-auto p-4 space-y-3 chat-bg-pattern flex flex-col">
-                    <!-- Dynamically Populated Messages -->
-                </div>
-
-                <!-- Extended Emoji Tray -->
-                <div id="emojiPicker" class="hidden bg-zapp-800 border-t border-slate-800 p-3 grid grid-cols-8 sm:grid-cols-10 gap-2 text-xl max-h-48 overflow-y-auto z-20">
-                    <!-- Populated via JS -->
-                </div>
-
-                <input type="file" id="fileInput" onchange="handleFileSelect(event)" class="hidden">
-
-                <!-- Chat Input Footer -->
-                <div class="p-3 bg-zapp-800 border-t border-slate-800 flex items-end space-x-2 z-20 glass-header">
-                    <button onclick="toggleEmojiPicker()" class="p-2 text-slate-400 hover:text-amber-400 transition focus:outline-none rounded-xl hover:bg-slate-700/50" title="Emojis">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </button>
-
-                    <button onclick="triggerFileInput()" class="p-2 text-slate-400 hover:text-zapp-400 transition focus:outline-none rounded-xl hover:bg-slate-700/50" title="Attach Media or File">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                    </button>
-
-                    <textarea id="messageInput" rows="1" inputmode="text" placeholder="Type a message..." enterkeyhint="send" autocomplete="off" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-zapp-500/60 resize-none max-h-28 overflow-y-auto"></textarea>
-
-                    <button onclick="sendMessage()" class="p-2.5 bg-zapp-500 hover:bg-zapp-400 text-slate-950 font-bold rounded-xl shadow-lg transition flex-shrink-0 focus:outline-none" title="Send Message">
-                        <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    </button>
-                </div>
-            </div>
-        </main>
+  <!-- MAIN CONTENT AREA -->
+  <main id="main-content">
+    
+    <!-- FEED VIEW -->
+    <div id="feed-panel" class="panel active">
+      <div id="feed-container">
+        <!-- Dynamic posts stream here -->
+      </div>
     </div>
 
-    <!-- PROFILE MODAL -->
-    <div id="profileModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-zapp-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-            <h3 class="text-base font-bold text-slate-100">Profile Settings</h3>
-            <div class="flex flex-col items-center space-y-3">
-                <div class="relative group cursor-pointer" onclick="document.getElementById('dpFileInput').click()">
-                    <div id="modalDpPreview" class="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-700 flex items-center justify-center text-2xl font-bold text-white overflow-hidden border-2 border-zapp-500 shadow-md">
-                        <span id="modalDpLetter">Z</span>
-                        <img id="modalDpImg" class="w-full h-full object-cover hidden" alt="DP Preview">
-                    </div>
-                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                    </div>
-                </div>
-                <input type="file" id="dpFileInput" accept="image/*" onchange="handleDpUpload(event)" class="hidden">
-                <span class="text-[11px] text-slate-400">Click avatar to upload new Profile Picture</span>
-            </div>
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Your Display Name</label>
-                <input type="text" id="editDisplayNameInput" placeholder="Enter name..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-zapp-500">
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeProfileModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition">Cancel</button>
-                <button onclick="saveProfileSettings()" class="px-4 py-2 text-xs font-bold bg-zapp-500 hover:bg-zapp-400 text-slate-950 rounded-xl transition shadow">Save Changes</button>
-            </div>
+    <!-- SEARCH PANEL -->
+    <div id="search-panel" class="panel">
+      <div class="search-box">
+        <input type="text" id="search-username" class="auth-input" placeholder="Search exact username..." />
+        <button class="btn-sm" onclick="searchUser()">Search</button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <!-- CREATE POST PANEL -->
+    <div id="create-panel" class="panel">
+      <div class="create-form">
+        <label class="file-input-label" for="post-file">
+          <i data-feather="upload-cloud" style="width:32px; height:32px;"></i>
+          <p>Click to select Image or Video Reel</p>
+        </label>
+        <input type="file" id="post-file" accept="image/*,video/*" style="display:none;" onchange="handleFileSelect(event)">
+        
+        <div id="preview-container"></div>
+
+        <input type="text" id="post-caption-input" class="auth-input" placeholder="Write a caption..." />
+        <button class="auth-btn" onclick="publishPost()">Share Post</button>
+      </div>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div id="chats-panel" class="panel">
+      <h3 style="margin-bottom:15px;">Direct Messages</h3>
+      <div class="chat-list" id="chat-friends-list"></div>
+    </div>
+
+    <!-- PROFILE PANEL -->
+    <div id="profile-panel" class="panel">
+      <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <div class="avatar" id="profile-avatar" style="width:70px; height:70px; font-size:1.8rem;">U</div>
+        <div>
+          <h3 id="profile-name">Username</h3>
+          <p style="color:var(--muted-text); font-size:0.85rem;" id="profile-peer-id">ID: ...</p>
         </div>
+      </div>
+      <h4>My Shared Posts</h4>
+      <div id="my-posts-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:4px; margin-top:10px;"></div>
     </div>
 
-    <!-- ADD CONTACT MODAL -->
-    <div id="addContactModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-zapp-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-            <h3 class="text-base font-bold text-slate-100">Add Friend</h3>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Friend's Short Zapp ID *</label>
-                    <input type="text" id="newContactId" placeholder="e.g. ZP-7K9M2P" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 font-mono uppercase focus:outline-none focus:border-zapp-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Nickname for Friend *</label>
-                    <input type="text" id="newContactNickname" placeholder="e.g. Alex" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-zapp-500">
-                </div>
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeAddContactModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition">Cancel</button>
-                <button onclick="sendFriendRequest()" class="px-4 py-2 text-xs font-bold bg-zapp-500 hover:bg-zapp-400 text-slate-950 rounded-xl transition shadow">Send Request</button>
-            </div>
+  </main>
+
+  <!-- CHAT WINDOW OVERLAY -->
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <i data-feather="arrow-left" class="action-icon" onclick="closeChat()"></i>
+      <div class="avatar" id="chat-target-avatar">F</div>
+      <strong id="chat-target-name">Friend</strong>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="chat-msg-input" class="auth-input" placeholder="Message..." />
+      <button class="btn-sm" onclick="sendDirectMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="nav-item active" onclick="switchTab('feed', this)"><i data-feather="home"></i></div>
+    <div class="nav-item" onclick="switchTab('search', this)"><i data-feather="search"></i></div>
+    <div class="nav-item" onclick="switchTab('create', this)"><i data-feather="plus-square"></i></div>
+    <div class="nav-item" onclick="switchTab('chats', this)"><i data-feather="message-circle"></i></div>
+    <div class="nav-item" onclick="switchTab('profile', this)"><i data-feather="user"></i></div>
+  </nav>
+
+</div>
+
+<script>
+  // Initialize Decentralized GunDB Graph Node
+  const gun = Gun({
+    peers: ['https://gun-manhattan.herokuapp.com/gun', 'https://peer.wallrpc.com/gun'] // Public Relay Nodes
+  });
+
+  let currentUser = null;
+  let currentPeer = null;
+  let selectedFileBase64 = null;
+  let selectedFileType = null;
+  let activeChatTarget = null;
+  let activeDataConnection = null;
+
+  feather.replace();
+
+  // 1. UNIQUE USER REGISTRATION & AUTH
+  function registerOrLogin() {
+    const name = document.getElementById('username-input').value.trim().toLowerCase();
+    const pass = document.getElementById('password-input').value.trim();
+
+    if (!name || !pass) return alert("Enter both username and password!");
+
+    const userRegistry = gun.get('insta_p2p_users').get(name);
+
+    userRegistry.once((data) => {
+      if (data && data.passHash !== btoa(pass)) {
+        document.getElementById('auth-error').innerText = "Username taken with different password!";
+        document.getElementById('auth-error').style.display = 'block';
+        return;
+      }
+
+      // Claim or login successfully
+      userRegistry.put({ username: name, passHash: btoa(pass), joined: Date.now() });
+      currentUser = name;
+
+      // Initialize WebRTC Direct Peer Channel
+      initPeerJS(name);
+
+      // Save locally
+      localStorage.setItem('insta_p2p_user', name);
+      document.getElementById('auth-modal').style.display = 'none';
+      setupProfile();
+      listenToFeed();
+    });
+  }
+
+  // Auto Login Check
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('insta_p2p_user');
+    if (saved) {
+      currentUser = saved;
+      document.getElementById('auth-modal').style.display = 'none';
+      initPeerJS(saved);
+      setupProfile();
+      listenToFeed();
+    }
+  });
+
+  // 2. WEBRTC DIRECT PEER INITIALIZATION
+  function initPeerJS(username) {
+    currentPeer = new Peer('instap2p-' + username);
+
+    currentPeer.on('open', (id) => {
+      document.getElementById('profile-peer-id').innerText = `@${username}`;
+    });
+
+    // Listen for incoming direct messages/file streams
+    currentPeer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        handleIncomingP2PData(data, conn.peer);
+      });
+    });
+  }
+
+  // 3. TAB SWITCHING
+  function switchTab(tabId, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    document.getElementById(tabId + '-panel').classList.add('active');
+    if (el) el.classList.add('active');
+  }
+
+  // 4. SEARCH & FOLLOW REQUEST SYSTEM
+  function searchUser() {
+    const target = document.getElementById('search-username').value.trim().toLowerCase();
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '';
+
+    if (!target) return;
+
+    gun.get('insta_p2p_users').get(target).once((data) => {
+      if (!data) {
+        resultsContainer.innerHTML = '<p style="color:var(--muted-text)">User not found!</p>';
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="avatar">${target[0]}</div>
+          <div><strong>${target}</strong></div>
         </div>
-    </div>
+        <button class="btn-sm" onclick="sendFollowRequest('${target}')">Follow Request</button>
+      `;
+      resultsContainer.appendChild(row);
+    });
+  }
 
-    <!-- NOTIFICATIONS MODAL -->
-    <div id="notificationsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-zapp-800 border border-slate-700 rounded-2xl w-full max-w-sm p-5 shadow-2xl space-y-4 flex flex-col max-h-[80vh]">
-            <div class="flex justify-between items-center pb-2 border-b border-slate-700">
-                <h3 class="text-base font-bold text-slate-100">Friend Requests</h3>
-                <button onclick="closeNotificationsModal()" class="text-slate-400 hover:text-white p-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div id="requestsList" class="flex-1 overflow-y-auto space-y-2">
-                <!-- Dynamically populated -->
-            </div>
+  function sendFollowRequest(target) {
+    gun.get('insta_p2p_requests').get(target).get(currentUser).put({
+      from: currentUser,
+      status: 'pending',
+      timestamp: Date.now()
+    });
+    alert(`Follow Request sent to @${target}!`);
+  }
+
+  // 5. POST CREATION & MEDIA PROCESSING
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    selectedFileType = file.type.startsWith('video') ? 'video' : 'image';
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      selectedFileBase64 = e.target.result;
+      const preview = document.getElementById('preview-container');
+      preview.style.display = 'block';
+
+      if (selectedFileType === 'image') {
+        preview.innerHTML = `<img src="${selectedFileBase64}" />`;
+      } else {
+        preview.innerHTML = `<video src="${selectedFileBase64}" controls></video>`;
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function publishPost() {
+    const caption = document.getElementById('post-caption-input').value;
+    if (!selectedFileBase64) return alert("Select an image or reel video first!");
+
+    const postId = 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    
+    const postObj = {
+      id: postId,
+      author: currentUser,
+      caption: caption,
+      media: selectedFileBase64,
+      mediaType: selectedFileType,
+      likes: 0,
+      timestamp: Date.now()
+    };
+
+    // Save to Graph Network
+    gun.get('insta_p2p_posts').get(postId).put(postObj);
+    gun.get('insta_p2p_user_posts').get(currentUser).get(postId).put(postObj);
+
+    alert("Post published successfully!");
+    
+    // Reset inputs
+    document.getElementById('post-caption-input').value = '';
+    document.getElementById('preview-container').style.display = 'none';
+    selectedFileBase64 = null;
+    
+    switchTab('feed');
+  }
+
+  // 6. REALTIME FEED ENGINE
+  function listenToFeed() {
+    const container = document.getElementById('feed-container');
+    
+    gun.get('insta_p2p_posts').map().on((post, id) => {
+      if (!post || !post.media) return;
+
+      let postEl = document.getElementById(id);
+      if (!postEl) {
+        postEl = document.createElement('div');
+        postEl.id = id;
+        postEl.className = 'post-card';
+        container.prepend(postEl);
+      }
+
+      const mediaHtml = post.mediaType === 'video' 
+        ? `<video src="${post.media}" class="post-media" controls autoplay loop muted></video>`
+        : `<img src="${post.media}" class="post-media" />`;
+
+      postEl.innerHTML = `
+        <div class="post-header">
+          <div class="avatar">${post.author ? post.author[0] : 'U'}</div>
+          <div class="post-username">${post.author}</div>
         </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- AUTO FULLSCREEN APP TRIGGER ---
-        function requestFullScreen() {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                const docEl = document.documentElement;
-                if (docEl.requestFullscreen) {
-                    docEl.requestFullscreen().catch(() => {});
-                } else if (docEl.webkitRequestFullscreen) {
-                    docEl.webkitRequestFullscreen().catch(() => {});
-                }
-            }
-        }
-        window.addEventListener('click', requestFullScreen, { once: true });
-        window.addEventListener('touchstart', requestFullScreen, { once: true });
-
-        // --- SHORT ID GENERATOR ---
-        function generateShortID() {
-            const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-            let id = 'ZP-';
-            for (let i = 0; i < 6; i++) {
-                id += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return id;
-        }
-
-        let myUUID = localStorage.getItem('zapp_my_id');
-        if (!myUUID || myUUID.length > 10) { 
-            myUUID = generateShortID();
-            localStorage.setItem('zapp_my_id', myUUID);
-        }
-
-        let myDisplayName = localStorage.getItem('zapp_my_name') || myUUID;
-        let myDP = localStorage.getItem('zapp_my_dp') || null;
-
-        let db;
-        let peer = null;
-        let activeConnections = {}; 
-        let activeChatContactId = null;
-        let contactsMap = {}; 
-        let friendRequests = [];
-
-        const EMOJIS = [
-            '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😍','🥰','😘','😜','😝','😛','🤑',
-            '🤗','🤓','😎','🤡','🥳','👍','👎','👋','👏','🙌','🔥','❤️','✨','🎉','🚀','💡','💬','💯','🙈','🙏'
-        ];
-
-        // --- INDEXEDDB INITIALIZATION ---
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('ZappChatDB_v5', 1);
-                request.onupgradeneeded = (e) => {
-                    const database = e.target.result;
-                    if (!database.objectStoreNames.contains('contacts')) {
-                        database.createObjectStore('contacts', { keyPath: 'id' });
-                    }
-                    if (!database.objectStoreNames.contains('messages')) {
-                        const msgStore = database.createObjectStore('messages', { keyPath: 'id' });
-                        msgStore.createIndex('chatId', 'chatId', { unique: false });
-                    }
-                    if (!database.objectStoreNames.contains('requests')) {
-                        database.createObjectStore('requests', { keyPath: 'id' });
-                    }
-                };
-                request.onsuccess = (e) => {
-                    db = e.target.result;
-                    resolve(db);
-                };
-                request.onerror = (e) => reject(e);
-            });
-        }
-
-        async function getContactsFromDB() {
-            return new Promise((resolve) => {
-                const tx = db.transaction('contacts', 'readonly');
-                const store = tx.objectStore('contacts');
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result || []);
-            });
-        }
-
-        async function saveContactToDB(contact) {
-            return new Promise((resolve) => {
-                const tx = db.transaction('contacts', 'readwrite');
-                const store = tx.objectStore('contacts');
-                store.put(contact);
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        async function deleteContactFromDB(contactId) {
-            return new Promise((resolve) => {
-                const tx = db.transaction(['contacts', 'messages'], 'readwrite');
-                tx.objectStore('contacts').delete(contactId);
-
-                const msgStore = tx.objectStore('messages');
-                const index = msgStore.index('chatId');
-                const req = index.openKeyCursor(IDBKeyRange.only(contactId));
-                req.onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    if (cursor) {
-                        msgStore.delete(cursor.primaryKey);
-                        cursor.continue();
-                    }
-                };
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        async function getRequestsFromDB() {
-            return new Promise((resolve) => {
-                const tx = db.transaction('requests', 'readonly');
-                const store = tx.objectStore('requests');
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result || []);
-            });
-        }
-
-        async function saveRequestToDB(req) {
-            return new Promise((resolve) => {
-                const tx = db.transaction('requests', 'readwrite');
-                const store = tx.objectStore('requests');
-                store.put(req);
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        async function deleteRequestFromDB(id) {
-            return new Promise((resolve) => {
-                const tx = db.transaction('requests', 'readwrite');
-                const store = tx.objectStore('requests');
-                store.delete(id);
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        async function getMessagesFromDB(chatId) {
-            return new Promise((resolve) => {
-                const tx = db.transaction('messages', 'readonly');
-                const store = tx.objectStore('messages');
-                const index = store.index('chatId');
-                const request = index.getAll(chatId);
-                request.onsuccess = () => {
-                    const msgs = request.result || [];
-                    msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                    resolve(msgs);
-                };
-            });
-        }
-
-        async function saveMessageToDB(message) {
-            if (!message.createdAt) message.createdAt = Date.now();
-            return new Promise((resolve) => {
-                const tx = db.transaction('messages', 'readwrite');
-                const store = tx.objectStore('messages');
-                store.put(message);
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        async function updateMessageStatusInDB(msgId, status) {
-            return new Promise((resolve) => {
-                const tx = db.transaction('messages', 'readwrite');
-                const store = tx.objectStore('messages');
-                const getReq = store.get(msgId);
-                getReq.onsuccess = () => {
-                    const msg = getReq.result;
-                    if (msg) {
-                        msg.status = status;
-                        store.put(msg);
-                    }
-                };
-                tx.oncomplete = () => resolve();
-            });
-        }
-
-        // --- APP INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', async () => {
-            updateUserProfileUI();
-            await initDB();
-            await loadContacts();
-            await loadRequests();
-            initPeerJS();
-            initEmojiPicker();
-
-            const msgInput = document.getElementById('messageInput');
-            msgInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                const menu = document.getElementById('chatMenuDropdown');
-                if (menu && !menu.contains(e.target) && !e.target.closest('button[onclick="toggleChatMenu()"]')) {
-                    menu.classList.add('hidden');
-                }
-            });
-        });
-
-        function updateUserProfileUI() {
-            document.getElementById('myUserIdDisplay').innerText = myUUID;
-            document.getElementById('myDisplayName').innerText = myDisplayName;
-
-            const letterEl = document.getElementById('userAvatarLetter');
-            const imgEl = document.getElementById('userAvatarImg');
-
-            if (myDP) {
-                imgEl.src = myDP;
-                imgEl.classList.remove('hidden');
-                letterEl.classList.add('hidden');
-            } else {
-                letterEl.innerText = myDisplayName.charAt(0).toUpperCase();
-                letterEl.classList.remove('hidden');
-                imgEl.classList.add('hidden');
-            }
-        }
-
-        // --- PEERJS NETWORKING ---
-        function initPeerJS() {
-            peer = new Peer(myUUID, { debug: 1 });
-
-            peer.on('open', () => {
-                document.getElementById('statusIndicator').className = 'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zapp-500 border-2 border-zapp-800 rounded-full shadow';
-                document.getElementById('statusIndicator').title = 'P2P Online';
-
-                connectAllContacts();
-
-                if (!window.peerSyncInterval) {
-                    window.peerSyncInterval = setInterval(() => {
-                        checkAndReconnectPending();
-                    }, 4000);
-                }
-            });
-
-            peer.on('connection', (conn) => {
-                setupConnectionHandlers(conn);
-            });
-
-            peer.on('error', (err) => {
-                console.warn('Zapp P2P Connection Note:', err.type);
-            });
-        }
-
-        function connectAllContacts() {
-            Object.keys(contactsMap).forEach(contactId => {
-                connectToPeer(contactId);
-            });
-        }
-
-        async function checkAndReconnectPending() {
-            const contacts = Object.keys(contactsMap);
-            for (let contactId of contacts) {
-                const msgs = await getMessagesFromDB(contactId);
-                const hasPending = msgs.some(m => m.senderId === myUUID && m.status === 'waiting');
-                if (hasPending || !activeConnections[contactId] || !activeConnections[contactId].open) {
-                    connectToPeer(contactId);
-                }
-            }
-        }
-
-        function setupConnectionHandlers(conn) {
-            const peerId = conn.peer;
-            activeConnections[peerId] = conn;
-
-            const handleOpen = () => {
-                conn.send({
-                    type: 'PROFILE_SYNC',
-                    senderName: myDisplayName,
-                    senderDp: myDP
-                });
-                conn.send({ type: 'SYNC_REQ' });
-                flushPendingMessages(peerId, conn);
-            };
-
-            if (conn.open) {
-                handleOpen();
-            } else {
-                conn.on('open', handleOpen);
-            }
-
-            conn.on('data', async (payload) => {
-                handleIncomingP2PData(payload, peerId, conn);
-            });
-
-            conn.on('close', () => {
-                delete activeConnections[peerId];
-            });
-
-            conn.on('error', () => {
-                delete activeConnections[peerId];
-            });
-        }
-
-        function connectToPeer(targetId) {
-            if (activeConnections[targetId] && activeConnections[targetId].open) {
-                flushPendingMessages(targetId, activeConnections[targetId]);
-                return activeConnections[targetId];
-            }
-            const conn = peer.connect(targetId, { reliable: true });
-            setupConnectionHandlers(conn);
-            return conn;
-        }
-
-        // --- P2P PAYLOAD DISPATCHER ---
-        async function handleIncomingP2PData(data, senderId, conn) {
-            if (data.type === 'SYNC_REQ') {
-                flushPendingMessages(senderId, conn);
-
-            } else if (data.type === 'PROFILE_SYNC') {
-                if (contactsMap[senderId]) {
-                    if (data.senderDp) contactsMap[senderId].dp = data.senderDp;
-                    await saveContactToDB(contactsMap[senderId]);
-                    renderContactsList();
-                    if (activeChatContactId === senderId) {
-                        updateActiveChatHeader(contactsMap[senderId]);
-                    }
-                }
-                flushPendingMessages(senderId, conn);
-
-            } else if (data.type === 'FRIEND_REQUEST') {
-                const newReq = {
-                    id: senderId,
-                    senderName: data.senderName || senderId,
-                    senderDp: data.senderDp || null,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-                await saveRequestToDB(newReq);
-                await loadRequests();
-
-            } else if (data.type === 'FRIEND_ACCEPT') {
-                if (!contactsMap[senderId]) {
-                    const newContact = {
-                        id: senderId,
-                        name: data.senderName || senderId,
-                        dp: data.senderDp || null,
-                        created_at: Date.now()
-                    };
-                    await saveContactToDB(newContact);
-                    contactsMap[senderId] = newContact;
-                    renderContactsList();
-                }
-
-            } else if (data.type === 'CHAT_MSG') {
-                const newMsg = {
-                    id: data.id,
-                    chatId: senderId,
-                    senderId: senderId,
-                    text: data.text || '',
-                    fileData: data.fileData || null,
-                    fileType: data.fileType || null,
-                    fileName: data.fileName || null,
-                    fileSize: data.fileSize || null,
-                    timestamp: data.timestamp,
-                    createdAt: data.createdAt || Date.now(),
-                    status: 'sent'
-                };
-
-                if (conn && conn.open) {
-                    conn.send({ type: 'ACK_DELIVERED', msgId: data.id });
-                }
-
-                if (activeChatContactId === senderId) {
-                    newMsg.status = 'seen';
-                    await saveMessageToDB(newMsg);
-                    if (conn && conn.open) {
-                        conn.send({ type: 'ACK_READ', msgId: data.id });
-                    }
-                    renderMessages(senderId);
-                } else {
-                    await saveMessageToDB(newMsg);
-                }
-                renderContactsList();
-
-            } else if (data.type === 'ACK_DELIVERED') {
-                await updateMessageStatusInDB(data.msgId, 'sent');
-                if (activeChatContactId) renderMessages(activeChatContactId);
-
-            } else if (data.type === 'ACK_READ') {
-                await updateMessageStatusInDB(data.msgId, 'seen');
-                if (activeChatContactId) renderMessages(activeChatContactId);
-            }
-        }
-
-        async function flushPendingMessages(targetId, customConn = null) {
-            const msgs = await getMessagesFromDB(targetId);
-            const pending = msgs.filter(m => m.senderId === myUUID && m.status === 'waiting');
-            const conn = customConn || activeConnections[targetId];
-
-            if (conn && conn.open && pending.length > 0) {
-                for (let m of pending) {
-                    conn.send({
-                        type: 'CHAT_MSG',
-                        id: m.id,
-                        text: m.text,
-                        fileData: m.fileData,
-                        fileType: m.fileType,
-                        fileName: m.fileName,
-                        fileSize: m.fileSize,
-                        timestamp: m.timestamp,
-                        createdAt: m.createdAt || Date.now()
-                    });
-                }
-            }
-        }
-
-        // --- FRIEND REQUEST HANDLERS ---
-        async function sendFriendRequest() {
-            let id = document.getElementById('newContactId').value.trim().toUpperCase();
-            const nickname = document.getElementById('newContactNickname').value.trim() || id;
-
-            if (!id) {
-                alert('Please enter a valid Zapp Short ID.');
-                return;
-            }
-            if (!id.startsWith('ZP-')) id = 'ZP-' + id;
-            if (id === myUUID) {
-                alert('You cannot add your own ID.');
-                return;
-            }
-
-            const contactObj = { id: id, name: nickname, dp: null, created_at: Date.now() };
-            await saveContactToDB(contactObj);
-            contactsMap[id] = contactObj;
-            renderContactsList();
-
-            const conn = connectToPeer(id);
-            const sendPayload = () => {
-                conn.send({
-                    type: 'FRIEND_REQUEST',
-                    senderName: myDisplayName,
-                    senderDp: myDP
-                });
-                alert(`Friend request sent to ${id}!`);
-                closeAddContactModal();
-            };
-
-            if (conn.open) {
-                sendPayload();
-            } else {
-                conn.on('open', sendPayload);
-                setTimeout(() => {
-                    closeAddContactModal();
-                }, 1000);
-            }
-        }
-
-        async function loadRequests() {
-            friendRequests = await getRequestsFromDB();
-            const badge = document.getElementById('notifBadge');
-            if (friendRequests.length > 0) {
-                badge.innerText = friendRequests.length;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-            renderRequestsList();
-        }
-
-        function renderRequestsList() {
-            const list = document.getElementById('requestsList');
-            if (friendRequests.length === 0) {
-                list.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">No pending friend requests.</div>`;
-                return;
-            }
-
-            let html = '';
-            friendRequests.forEach(req => {
-                html += `
-                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/60 flex items-center justify-between">
-                        <div class="flex items-center space-x-2.5">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-700 flex items-center justify-center font-bold text-white text-xs overflow-hidden">
-                                ${req.senderDp ? `<img src="${req.senderDp}" class="w-full h-full object-cover"/>` : req.senderName.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-100 text-xs">${req.senderName}</span>
-                                <span class="font-mono text-[10px] text-zapp-400">${req.id}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-1.5">
-                            <button onclick="acceptRequest('${req.id}', '${req.senderName}', '${req.senderDp || ''}')" class="px-2.5 py-1 bg-zapp-500 hover:bg-zapp-400 text-slate-950 font-bold text-[11px] rounded-lg transition">Accept</button>
-                            <button onclick="rejectRequest('${req.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] rounded-lg transition">Decline</button>
-                        </div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-        }
-
-        async function acceptRequest(senderId, senderName, senderDp) {
-            const localName = prompt(`Accept request from ${senderName}. Set local contact name:`, senderName) || senderName;
-            const newContact = { id: senderId, name: localName, dp: senderDp || null, created_at: Date.now() };
-            await saveContactToDB(newContact);
-            contactsMap[senderId] = newContact;
-
-            await deleteRequestFromDB(senderId);
-            await loadRequests();
-            renderContactsList();
-
-            const conn = connectToPeer(senderId);
-            const notifyAccept = () => {
-                conn.send({ type: 'FRIEND_ACCEPT', senderName: myDisplayName, senderDp: myDP });
-            };
-            if (conn.open) notifyAccept();
-            else conn.on('open', notifyAccept);
-
-            openChat(senderId);
-            closeNotificationsModal();
-        }
-
-        async function rejectRequest(senderId) {
-            await deleteRequestFromDB(senderId);
-            await loadRequests();
-        }
-
-        // --- MESSAGING ENGINE ---
-        async function sendMessage(fileObj = null) {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if (!text && !fileObj) return;
-            if (!activeChatContactId) return;
-
-            const msgId = crypto.randomUUID();
-            const now = Date.now();
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const messageObj = {
-                id: msgId,
-                chatId: activeChatContactId,
-                senderId: myUUID,
-                text: text,
-                fileData: fileObj ? fileObj.data : null,
-                fileType: fileObj ? fileObj.type : null,
-                fileName: fileObj ? fileObj.name : null,
-                fileSize: fileObj ? fileObj.size : null,
-                timestamp: timestamp,
-                createdAt: now,
-                status: 'waiting'
-            };
-
-            const conn = activeConnections[activeChatContactId];
-            if (conn && conn.open) {
-                messageObj.status = 'sent';
-                conn.send({
-                    type: 'CHAT_MSG',
-                    id: msgId,
-                    text: messageObj.text,
-                    fileData: messageObj.fileData,
-                    fileType: messageObj.fileType,
-                    fileName: messageObj.fileName,
-                    fileSize: messageObj.fileSize,
-                    timestamp: timestamp,
-                    createdAt: now
-                });
-            } else {
-                connectToPeer(activeChatContactId);
-            }
-
-            await saveMessageToDB(messageObj);
-            input.value = '';
-
-            renderMessages(activeChatContactId);
-            renderContactsList();
-        }
-
-        // --- MEDIA SELECTION ---
-        function triggerFileInput() {
-            document.getElementById('fileInput').click();
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64Data = e.target.result;
-                let fileCategory = 'file';
-                if (file.type.startsWith('image/')) fileCategory = 'image';
-                else if (file.type.startsWith('video/')) fileCategory = 'video';
-
-                const formattedSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-                await sendMessage({
-                    data: base64Data,
-                    type: fileCategory,
-                    name: file.name,
-                    size: formattedSize
-                });
-                document.getElementById('fileInput').value = '';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // --- UI RENDERERS ---
-        async function loadContacts() {
-            const contacts = await getContactsFromDB();
-            contactsMap = {};
-            contacts.forEach(c => contactsMap[c.id] = c);
-            renderContactsList();
-        }
-
-        async function renderContactsList() {
-            const listContainer = document.getElementById('contactsList');
-            const contacts = Object.values(contactsMap);
-
-            if (contacts.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="p-8 text-center text-slate-500 text-xs">
-                        No chats found.<br>Click <b>+</b> to send a friend request.
-                    </div>`;
-                return;
-            }
-
-            const contactsWithLastMsg = await Promise.all(contacts.map(async (c) => {
-                const msgs = await getMessagesFromDB(c.id);
-                const unreadCount = msgs.filter(m => m.senderId === c.id && m.status !== 'seen').length;
-                const lastMsgObj = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-                return {
-                    contact: c,
-                    lastMsgObj: lastMsgObj,
-                    unreadCount: unreadCount,
-                    lastTime: lastMsgObj ? (lastMsgObj.createdAt || 0) : (c.created_at || 0)
-                };
-            }));
-
-            contactsWithLastMsg.sort((a, b) => b.lastTime - a.lastTime);
-
-            let html = '';
-            for (let item of contactsWithLastMsg) {
-                const c = item.contact;
-                const last = item.lastMsgObj;
-                let lastMsg = 'No messages yet';
-                let timeStr = '';
-                if (last) {
-                    lastMsg = last.fileType ? `[${last.fileType.toUpperCase()}]` : last.text;
-                    timeStr = last.timestamp || '';
-                }
-
-                html += `
-                    <div onclick="openChat('${c.id}')" class="p-3 flex items-center space-x-3 cursor-pointer hover:bg-slate-800/50 transition ${activeChatContactId === c.id ? 'bg-slate-800/80 border-l-4 border-zapp-500' : ''}">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center font-bold text-white text-sm shadow flex-shrink-0 overflow-hidden border border-slate-700">
-                            ${c.dp ? `<img src="${c.dp}" class="w-full h-full object-cover"/>` : c.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-baseline">
-                                <span class="font-semibold text-slate-200 text-xs truncate">${c.name}</span>
-                                ${timeStr ? `<span class="text-[10px] ${item.unreadCount > 0 ? 'text-zapp-400 font-bold' : 'text-slate-500'}">${timeStr}</span>` : ''}
-                            </div>
-                            <div class="flex justify-between items-center mt-0.5">
-                                <p class="text-[11px] ${item.unreadCount > 0 ? 'text-slate-200 font-medium' : 'text-slate-400'} truncate pr-2">${lastMsg}</p>
-                                ${item.unreadCount > 0 ? `<span class="bg-zapp-500 text-slate-950 font-bold text-[10px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center animate-pulse">${item.unreadCount}</span>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            listContainer.innerHTML = html;
-        }
-
-        function updateActiveChatHeader(contact) {
-            document.getElementById('activeContactName').innerText = contact.name;
-            document.getElementById('activeContactId').innerText = `ID: ${contact.id}`;
-
-            const letterEl = document.getElementById('activeContactAvatarText');
-            const imgEl = document.getElementById('activeContactAvatarImg');
-
-            if (contact.dp) {
-                imgEl.src = contact.dp;
-                imgEl.classList.remove('hidden');
-                letterEl.classList.add('hidden');
-            } else {
-                letterEl.innerText = contact.name.charAt(0).toUpperCase();
-                letterEl.classList.remove('hidden');
-                imgEl.classList.add('hidden');
-            }
-        }
-
-        async function openChat(contactId) {
-            activeChatContactId = contactId;
-            const contact = contactsMap[contactId];
-
-            document.getElementById('noChatSelected').classList.add('hidden');
-            document.getElementById('activeChat').classList.remove('hidden');
-
-            updateActiveChatHeader(contact);
-            document.getElementById('chatWindow').classList.remove('translate-x-full');
-
-            const msgs = await getMessagesFromDB(contactId);
-            const conn = connectToPeer(contactId);
-            for (let m of msgs) {
-                if (m.senderId === contactId && m.status !== 'seen') {
-                    m.status = 'seen';
-                    await saveMessageToDB(m);
-                    if (conn && conn.open) {
-                        conn.send({ type: 'ACK_READ', msgId: m.id });
-                    }
-                }
-            }
-
-            renderMessages(contactId);
-            renderContactsList();
-        }
-
-        function closeActiveChat() {
-            document.getElementById('chatWindow').classList.add('translate-x-full');
-            document.getElementById('noChatSelected').classList.remove('hidden');
-            document.getElementById('activeChat').classList.add('hidden');
-            activeChatContactId = null;
-            renderContactsList();
-        }
-
-        function scrollToBottom() {
-            const box = document.getElementById('messagesBox');
-            if (box) {
-                box.scrollTop = box.scrollHeight;
-                requestAnimationFrame(() => {
-                    box.scrollTop = box.scrollHeight;
-                });
-            }
-        }
-
-        async function renderMessages(contactId) {
-            if (activeChatContactId !== contactId) return;
-            const box = document.getElementById('messagesBox');
-            const msgs = await getMessagesFromDB(contactId);
-
-            let html = '';
-            msgs.forEach(m => {
-                const isMe = m.senderId === myUUID;
-
-                let mediaPayload = '';
-                if (m.fileType === 'image') {
-                    mediaPayload = `<img src="${m.fileData}" class="rounded-lg max-h-60 w-auto object-cover mb-1.5 cursor-pointer hover:opacity-90 transition" onclick="window.open('${m.fileData}')"/>`;
-                } else if (m.fileType === 'video') {
-                    mediaPayload = `<video src="${m.fileData}" controls class="rounded-lg max-h-60 w-full mb-1.5"></video>`;
-                } else if (m.fileType === 'file') {
-                    mediaPayload = `
-                        <a href="${m.fileData}" download="${m.fileName}" class="flex items-center space-x-2.5 p-2.5 rounded-lg bg-black/20 border border-white/10 mb-1.5 hover:bg-black/30 transition">
-                            <svg class="w-6 h-6 text-zapp-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                            <div class="flex flex-col min-w-0 flex-1">
-                                <span class="text-xs font-semibold text-slate-100 truncate">${m.fileName}</span>
-                                <span class="text-[10px] text-slate-400">${m.fileSize}</span>
-                            </div>
-                        </a>
-                    `;
-                }
-
-                html += `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                        <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-2 text-xs shadow ${isMe ? 'bg-bubble-out text-slate-100 rounded-tr-none' : 'bg-bubble-in text-slate-100 rounded-tl-none border border-slate-700/50'}">
-                            ${mediaPayload}
-                            ${m.text ? `<p class="break-words leading-relaxed">${m.text}</p>` : ''}
-                            <div class="flex items-center justify-end space-x-1.5 mt-1 text-[10px] ${isMe ? 'text-emerald-200/80' : 'text-slate-400'}">
-                                <span>${m.timestamp}</span>
-                                ${isMe ? `<span>${getStatusBadgeHTML(m.status)}</span>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            box.innerHTML = html;
-            scrollToBottom();
-        }
-
-        function getStatusBadgeHTML(status) {
-            if (status === 'waiting') {
-                return `<span class="text-amber-400/90 font-mono text-[10px]">⏳ waiting</span>`;
-            } else if (status === 'sent') {
-                return `<span class="text-slate-300 font-mono text-[10px]">✓ sent</span>`;
-            } else if (status === 'seen') {
-                return `<span class="text-cyan-300 font-bold text-[10px]">✓✓ seen</span>`;
-            }
-            return '';
-        }
-
-        // --- 3-DOTS MENU & CONTACT MANAGEMENT ---
-        function toggleChatMenu() {
-            document.getElementById('chatMenuDropdown').classList.toggle('hidden');
-        }
-
-        async function openRenameContactModal() {
-            document.getElementById('chatMenuDropdown').classList.add('hidden');
-            if (!activeChatContactId) return;
-
-            const contact = contactsMap[activeChatContactId];
-            const newName = prompt("Rename this contact (Local name):", contact ? contact.name : "");
-            if (newName && newName.trim()) {
-                contact.name = newName.trim();
-                await saveContactToDB(contact);
-                updateActiveChatHeader(contact);
-                renderContactsList();
-            }
-        }
-
-        async function deleteCurrentContact() {
-            document.getElementById('chatMenuDropdown').classList.add('hidden');
-            if (!activeChatContactId) return;
-
-            const contact = contactsMap[activeChatContactId];
-            const confirmDelete = confirm(`Are you sure you want to delete ${contact ? contact.name : 'this contact'} and all message history?`);
-            if (!confirmDelete) return;
-
-            await deleteContactFromDB(activeChatContactId);
-            delete contactsMap[activeChatContactId];
-
-            closeActiveChat();
-            renderContactsList();
-        }
-
-        // --- PROFILE MODAL ---
-        function openProfileModal() {
-            document.getElementById('editDisplayNameInput').value = myDisplayName;
-            const letterEl = document.getElementById('modalDpLetter');
-            const imgEl = document.getElementById('modalDpImg');
-
-            if (myDP) {
-                imgEl.src = myDP;
-                imgEl.classList.remove('hidden');
-                letterEl.classList.add('hidden');
-            } else {
-                letterEl.innerText = myDisplayName.charAt(0).toUpperCase();
-                letterEl.classList.remove('hidden');
-                imgEl.classList.add('hidden');
-            }
-
-            document.getElementById('profileModal').classList.remove('hidden');
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.add('hidden');
-        }
-
-        function handleDpUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                myDP = e.target.result;
-                const imgEl = document.getElementById('modalDpImg');
-                imgEl.src = myDP;
-                imgEl.classList.remove('hidden');
-                document.getElementById('modalDpLetter').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function saveProfileSettings() {
-            const nameInput = document.getElementById('editDisplayNameInput').value.trim();
-            if (nameInput) myDisplayName = nameInput;
-
-            localStorage.setItem('zapp_my_name', myDisplayName);
-            if (myDP) localStorage.setItem('zapp_my_dp', myDP);
-
-            updateUserProfileUI();
-            closeProfileModal();
-
-            Object.keys(activeConnections).forEach(peerId => {
-                const conn = activeConnections[peerId];
-                if (conn && conn.open) {
-                    conn.send({
-                        type: 'PROFILE_SYNC',
-                        senderName: myDisplayName,
-                        senderDp: myDP
-                    });
-                }
-            });
-        }
-
-        // --- EMOJI PICKER ---
-        function initEmojiPicker() {
-            const picker = document.getElementById('emojiPicker');
-            picker.innerHTML = EMOJIS.map(e => `
-                <button onclick="insertEmoji('${e}')" class="hover:bg-slate-700/50 rounded-lg p-1 transition flex items-center justify-center">${e}</button>
-            `).join('');
-        }
-
-        function toggleEmojiPicker() {
-            document.getElementById('emojiPicker').classList.toggle('hidden');
-        }
-
-        function insertEmoji(emoji) {
-            const input = document.getElementById('messageInput');
-            input.value += emoji;
-            input.focus();
-        }
-
-        // --- MODAL UTILS & SEARCH ---
-        function openAddContactModal() {
-            document.getElementById('addContactModal').classList.remove('hidden');
-        }
-
-        function closeAddContactModal() {
-            document.getElementById('addContactModal').classList.add('hidden');
-            document.getElementById('newContactId').value = '';
-            document.getElementById('newContactNickname').value = '';
-        }
-
-        function openNotificationsModal() {
-            document.getElementById('notificationsModal').classList.remove('hidden');
-        }
-
-        function closeNotificationsModal() {
-            document.getElementById('notificationsModal').classList.add('hidden');
-        }
-
-        function copyMyID() {
-            navigator.clipboard.writeText(myUUID);
-            alert(`Your Short Zapp ID (${myUUID}) copied to clipboard!`);
-        }
-
-        function filterContacts() {
-            const query = document.getElementById('contactSearchInput').value.toLowerCase();
-            const items = document.querySelectorAll('#contactsList > div');
-            items.forEach(item => {
-                const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(query) ? 'flex' : 'none';
-            });
-        }
-    </script>
+        ${mediaHtml}
+        <div class="post-actions">
+          <i data-feather="heart" class="action-icon" onclick="likePost('${id}')"></i>
+          <i data-feather="message-circle" class="action-icon"></i>
+        </div>
+        <div class="post-likes" id="likes-${id}">${post.likes || 0} likes</div>
+        <div class="post-caption"><span>${post.author}</span>${post.caption || ''}</div>
+        <div class="post-comments" id="comments-${id}"></div>
+        <div style="display:flex; padding: 0 14px 10px; gap:8px;">
+          <input type="text" id="input-comment-${id}" class="auth-input" style="padding:6px; font-size:0.8rem;" placeholder="Add a comment..." />
+          <button class="btn-sm" onclick="addComment('${id}')">Post</button>
+        </div>
+      `;
+
+      feather.replace();
+      listenToComments(id);
+    });
+  }
+
+  function likePost(postId) {
+    const postRef = gun.get('insta_p2p_posts').get(postId);
+    postRef.get('likes').once((currentLikes) => {
+      postRef.update({ likes: (currentLikes || 0) + 1 });
+    });
+  }
+
+  function addComment(postId) {
+    const input = document.getElementById(`input-comment-${postId}`);
+    const text = input.value.trim();
+    if (!text) return;
+
+    gun.get('insta_p2p_comments').get(postId).set({
+      author: currentUser,
+      text: text,
+      timestamp: Date.now()
+    });
+
+    input.value = '';
+  }
+
+  function listenToComments(postId) {
+    const commentBox = document.getElementById(`comments-${postId}`);
+    if (!commentBox) return;
+
+    gun.get('insta_p2p_comments').get(postId).map().on((comment) => {
+      if (!comment) return;
+      const cId = 'c_' + comment.timestamp;
+      if (!document.getElementById(cId)) {
+        const item = document.createElement('div');
+        item.id = cId;
+        item.className = 'comment-item';
+        item.innerHTML = `<strong>${comment.author}</strong>${comment.text}`;
+        commentBox.appendChild(item);
+      }
+    });
+  }
+
+  // 7. DIRECT MESSAGING (P2P + Offline Relay)
+  function setupProfile() {
+    document.getElementById('profile-name').innerText = currentUser;
+    document.getElementById('profile-avatar').innerText = currentUser[0].toUpperCase();
+
+    // Render my posts
+    const myGrid = document.getElementById('my-posts-grid');
+    gun.get('insta_p2p_user_posts').get(currentUser).map().on((post) => {
+      if (!post || !post.media) return;
+      const thumb = document.createElement('div');
+      thumb.style.aspectRatio = '1';
+      thumb.style.background = '#222';
+      thumb.innerHTML = post.mediaType === 'video'
+        ? `<video src="${post.media}" style="width:100%; height:100%; object-fit:cover;"></video>`
+        : `<img src="${post.media}" style="width:100%; height:100%; object-fit:cover;" />`;
+      myGrid.appendChild(thumb);
+    });
+
+    loadChatList();
+  }
+
+  function loadChatList() {
+    const chatList = document.getElementById('chat-friends-list');
+    chatList.innerHTML = '';
+
+    // Simple chat discovery (Listen to messages stored for current user)
+    gun.get('insta_p2p_chats').get(currentUser).map().on((msg, friend) => {
+      if (!document.getElementById('chat-row-' + friend)) {
+        const row = document.createElement('div');
+        row.id = 'chat-row-' + friend;
+        row.className = 'user-row';
+        row.onclick = () => openChat(friend);
+        row.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="avatar">${friend[0]}</div>
+            <div><strong>${friend}</strong></div>
+          </div>
+          <i data-feather="chevron-right"></i>
+        `;
+        chatList.appendChild(row);
+        feather.replace();
+      }
+    });
+  }
+
+  function openChat(friendUsername) {
+    activeChatTarget = friendUsername;
+    document.getElementById('chat-target-name').innerText = friendUsername;
+    document.getElementById('chat-target-avatar').innerText = friendUsername[0].toUpperCase();
+    document.getElementById('chat-messages').innerHTML = '';
+    document.getElementById('chat-window').classList.add('active');
+
+    // Load persistent store
+    gun.get('insta_p2p_chats').get(currentUser).get(activeChatTarget).map().on((msg) => {
+      if (!msg) return;
+      renderMessage(msg.text, msg.sender === currentUser ? 'sent' : 'received');
+    });
+
+    // Establish active WebRTC Data Channel if online
+    activeDataConnection = currentPeer.connect('instap2p-' + friendUsername);
+  }
+
+  function closeChat() {
+    document.getElementById('chat-window').classList.remove('active');
+  }
+
+  function sendDirectMessage() {
+    const input = document.getElementById('chat-msg-input');
+    const text = input.value.trim();
+    if (!text || !activeChatTarget) return;
+
+    const msgData = { sender: currentUser, text: text, timestamp: Date.now() };
+
+    // Send via WebRTC if connected directly
+    if (activeDataConnection && activeDataConnection.open) {
+      activeDataConnection.send(msgData);
+    }
+
+    // Sync to GunDB Graph (Offline access guarantee)
+    gun.get('insta_p2p_chats').get(currentUser).get(activeChatTarget).set(msgData);
+    gun.get('insta_p2p_chats').get(activeChatTarget).get(currentUser).set(msgData);
+
+    input.value = '';
+  }
+
+  function handleIncomingP2PData(data, senderPeerId) {
+    if (data.text) {
+      renderMessage(data.text, 'received');
+    }
+  }
+
+  function renderMessage(text, type) {
+    const box = document.getElementById('chat-messages');
+    const msgEl = document.createElement('div');
+    msgEl.className = `msg ${type}`;
+    msgEl.innerText = text;
+    box.appendChild(msgEl);
+    box.scrollTop = box.scrollHeight;
+  }
+</script>
 </body>
 </html>
