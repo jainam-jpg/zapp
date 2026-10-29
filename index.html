@@ -45,7 +45,6 @@
             overflow-x: hidden;
         }
 
-        /* App Wrapper */
         #app {
             width: 100%;
             max-width: 470px;
@@ -66,7 +65,6 @@
             }
         }
 
-        /* Header */
         header {
             height: var(--nav-height);
             border-bottom: 1px solid var(--border-color);
@@ -96,7 +94,6 @@
             cursor: pointer;
         }
 
-        /* Main Viewport */
         main {
             flex: 1;
             overflow-y: auto;
@@ -118,7 +115,6 @@
             display: block;
         }
 
-        /* Bottom Navigation Bar */
         nav {
             height: 50px;
             border-top: 1px solid var(--border-color);
@@ -143,7 +139,6 @@
             transform: scale(0.85);
         }
 
-        /* Auth Screen */
         #auth-screen {
             position: absolute;
             inset: 0;
@@ -202,7 +197,6 @@
             cursor: not-allowed;
         }
 
-        /* Feed Posts */
         .post-card {
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 15px;
@@ -301,7 +295,6 @@
             cursor: pointer;
         }
 
-        /* Stories Bar */
         .stories-container {
             display: flex;
             gap: 14px;
@@ -333,7 +326,6 @@
             border: 2px solid #000;
         }
 
-        /* Search Section */
         .search-bar-container {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -357,7 +349,6 @@
             gap: 12px;
         }
 
-        /* Reels View */
         .reels-container {
             height: 100%;
             scroll-snap-type: y mandatory;
@@ -408,7 +399,6 @@
             font-size: 0.75rem;
         }
 
-        /* Chat / Messages */
         .chat-list {
             display: flex;
             flex-direction: column;
@@ -485,7 +475,6 @@
             gap: 8px;
         }
 
-        /* Modal / Create Post */
         #create-modal {
             position: absolute;
             inset: 0;
@@ -527,7 +516,6 @@
             object-fit: cover;
         }
 
-        /* Alert Box */
         .toast {
             position: absolute;
             top: 20px;
@@ -555,7 +543,7 @@
         <div id="auth-screen">
             <div class="auth-card">
                 <div class="header" style="text-align: center; margin-bottom: 10px;">
-                    <i class="fa-fill fa-camera-retro" style="font-size: 3rem; color: #fff; margin-bottom: 10px;"></i>
+                    <i class="fa-solid fa-camera-retro" style="font-size: 3rem; color: #fff; margin-bottom: 10px;"></i>
                     <h1 class="auth-title">Instagram</h1>
                     <p style="color: var(--text-muted); font-size: 0.85rem;">Serverless P2P Edition</p>
                 </div>
@@ -579,12 +567,8 @@
         <main>
             <!-- 1. FEED VIEW -->
             <section id="feed-view" class="view-section active">
-                <div class="stories-container" id="stories-bar">
-                    <!-- Stories dynamically rendered -->
-                </div>
-                <div id="posts-container">
-                    <!-- Posts dynamically rendered -->
-                </div>
+                <div class="stories-container" id="stories-bar"></div>
+                <div id="posts-container"></div>
             </section>
 
             <!-- 2. SEARCH / EXPLORE VIEW -->
@@ -592,16 +576,12 @@
                 <div class="search-bar-container">
                     <input type="text" id="user-search-input" class="input-field" placeholder="Search exact ID or friends..." oninput="handleSearch(this.value)">
                 </div>
-                <ul class="user-list" id="search-results">
-                    <!-- Dynamic Search Results -->
-                </ul>
+                <ul class="user-list" id="search-results"></ul>
             </section>
 
             <!-- 3. REELS VIEW -->
             <section id="reels-view" class="view-section">
-                <div class="reels-container" id="reels-container">
-                    <!-- Dynamic Reels -->
-                </div>
+                <div class="reels-container" id="reels-container"></div>
             </section>
 
             <!-- 4. MESSAGES LIST VIEW -->
@@ -609,9 +589,7 @@
                 <div style="padding: 12px; border-bottom: 1px solid var(--border-color); font-weight: bold;">
                     Messages & Friend Requests
                 </div>
-                <div class="chat-list" id="chat-list">
-                    <!-- Dynamic Chats -->
-                </div>
+                <div class="chat-list" id="chat-list"></div>
             </section>
 
             <!-- 5. PROFILE VIEW -->
@@ -628,9 +606,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="profile-posts-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px;">
-                    <!-- User Posts Grid -->
-                </div>
+                <div id="profile-posts-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px;"></div>
             </section>
         </main>
 
@@ -641,9 +617,7 @@
                 <div class="avatar" id="chat-user-avatar" style="width: 30px; height: 30px;">C</div>
                 <b id="chat-user-name">Friend</b>
             </div>
-            <div class="chat-messages" id="chat-messages-container">
-                <!-- Chat Messages -->
-            </div>
+            <div class="chat-messages" id="chat-messages-container"></div>
             <div class="chat-input-area">
                 <input type="text" id="chat-message-input" class="input-field" placeholder="Message..." onkeypress="handleChatKey(event)">
                 <button class="btn" style="width: auto; padding: 0 16px;" onclick="sendChatMessage()">Send</button>
@@ -678,31 +652,10 @@
     </div>
 
     <script>
-        /* ==========================================================================
-           1. ZERO-COST FREE DATABASE INITIALIZATION (For Strict Unique IDs & Discovery)
-           ========================================================================== */
-        // Global public guest Firebase configuration (Zero central server needed)
-        const firebaseConfig = {
-            databaseURL: "https://insta-clone-jugaad-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
-        
-        let db = null;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
-        } catch(e) {
-            console.warn("Database operating in local mode");
-        }
-
-        /* ==========================================================================
-           2. GLOBAL APP STATE & LOCAL STORAGE PERSISTENCE
-           ========================================================================== */
         let currentUser = localStorage.getItem('insta_p2p_username') || null;
         let peer = null;
-        let activePeerConnections = {};
         let activeChatUser = null;
 
-        // Local state store
         let appState = {
             friends: JSON.parse(localStorage.getItem('insta_friends')) || [],
             requests: JSON.parse(localStorage.getItem('insta_requests')) || [],
@@ -714,9 +667,6 @@
             ]
         };
 
-        /* ==========================================================================
-           3. APPLICATION INITIALIZATION & AUTHENTICATION
-           ========================================================================== */
         window.addEventListener('DOMContentLoaded', () => {
             if (currentUser) {
                 document.getElementById('auth-screen').style.display = 'none';
@@ -725,7 +675,6 @@
             }
         });
 
-        // Strict Unique ID Verification and Registration
         async function registerUser() {
             const usernameInput = document.getElementById('username-input').value.trim().toLowerCase();
             const statusEl = document.getElementById('auth-status');
@@ -742,27 +691,7 @@
             }
 
             btn.disabled = true;
-            statusEl.innerText = "Checking username availability...";
-
-            // Check uniqueness in global registry
-            if (db) {
-                try {
-                    const snapshot = await db.ref('users/' + usernameInput).once('value');
-                    if (snapshot.exists()) {
-                        statusEl.innerText = "ID already taken by someone else! Pick another.";
-                        btn.disabled = false;
-                        return;
-                    }
-
-                    // Claim unique ID globally
-                    await db.ref('users/' + usernameInput).set({
-                        registeredAt: Date.now(),
-                        active: true
-                    });
-                } catch(err) {
-                    console.log("Registry offline, using P2P mode");
-                }
-            }
+            statusEl.innerText = "Logging in...";
 
             currentUser = usernameInput;
             localStorage.setItem('insta_p2p_username', currentUser);
@@ -772,18 +701,13 @@
             showToast("Account Created Successfully!");
         }
 
-        /* ==========================================================================
-           4. PEERJS (WEBRTC) P2P NETWORKING ENGINE
-           ========================================================================== */
         function initPeerJS() {
-            // Peer ID is directly linked to unique username
             peer = new Peer('insta-p2p-' + currentUser);
 
             peer.on('open', (id) => {
                 console.log('Connected to P2P network as:', id);
             });
 
-            // Handle Incoming Direct Peer Connections
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => {
                     handleIncomingP2PData(data, conn);
@@ -805,7 +729,6 @@
                         showToast(`New friend request from ${data.from}`);
                     }
                     break;
-
                 case 'ACCEPT_REQUEST':
                     if (!appState.friends.includes(data.from)) {
                         appState.friends.push(data.from);
@@ -814,7 +737,6 @@
                         showToast(`${data.from} accepted your friend request!`);
                     }
                     break;
-
                 case 'CHAT_MESSAGE':
                     if (!appState.chats[data.from]) appState.chats[data.from] = [];
                     appState.chats[data.from].push({ sender: data.from, text: data.text, time: Date.now() });
@@ -826,7 +748,6 @@
                     }
                     renderMessagesView();
                     break;
-
                 case 'NEW_POST':
                     appState.posts.unshift(data.post);
                     saveState();
@@ -842,9 +763,6 @@
             });
         }
 
-        /* ==========================================================================
-           5. UI RENDERERS & NAVIGATION
-           ========================================================================== */
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
@@ -868,7 +786,6 @@
                     <span>Your Story</span>
                 </div>
             `;
-
             appState.friends.forEach(friend => {
                 html += `
                     <div class="story-item">
@@ -888,7 +805,6 @@
                 container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">No posts yet. Upload a post or add friends!</div>`;
                 return;
             }
-
             container.innerHTML = appState.posts.map((post, idx) => `
                 <div class="post-card">
                     <div class="post-header">
@@ -949,52 +865,30 @@
             `).join('');
         }
 
-        /* ==========================================================================
-           6. SEARCH & FRIEND REQUEST SYSTEM
-           ========================================================================== */
-        async function handleSearch(query) {
+        function handleSearch(query) {
             query = query.trim().toLowerCase();
             const list = document.getElementById('search-results');
             if (!query) {
                 list.innerHTML = '';
                 return;
             }
-
-            let matches = [];
-
-            // Search online db registry
-            if (db) {
-                const snapshot = await db.ref('users').once('value');
-                const users = snapshot.val() || {};
-                Object.keys(users).forEach(u => {
-                    if (u.includes(query) && u !== currentUser) {
-                        matches.push(u);
-                    }
-                });
-            } else if (query !== currentUser) {
-                matches.push(query);
-            }
-
-            if (matches.length === 0) {
-                list.innerHTML = `<li style="padding:15px; color:var(--text-muted); text-align:center;">No users found</li>`;
+            if (query === currentUser) {
+                list.innerHTML = `<li style="padding:15px; color:var(--text-muted); text-align:center;">That's you!</li>`;
                 return;
             }
 
-            list.innerHTML = matches.map(u => {
-                const isFriend = appState.friends.includes(u);
-                return `
-                    <li class="user-item">
-                        <div class="user-info">
-                            <div class="avatar">${u[0]}</div>
-                            <b>${u}</b>
-                        </div>
-                        ${isFriend ? 
-                            '<span style="color:var(--text-muted); font-size:0.85rem;">Friends</span>' : 
-                            `<button class="btn" style="width:auto; padding:6px 14px;" onclick="sendFriendRequest('${u}')">Add Friend</button>`
-                        }
-                    </li>
-                `;
-            }).join('');
+            list.innerHTML = `
+                <li class="user-item">
+                    <div class="user-info">
+                        <div class="avatar">${query[0]}</div>
+                        <b>${query}</b>
+                    </div>
+                    ${appState.friends.includes(query) ? 
+                        '<span style="color:var(--text-muted); font-size:0.85rem;">Friends</span>' : 
+                        `<button class="btn" style="width:auto; padding:6px 14px;" onclick="sendFriendRequest('${query}')">Add Friend</button>`
+                    }
+                </li>
+            `;
         }
 
         function sendFriendRequest(targetUser) {
@@ -1005,14 +899,10 @@
             showToast(`Friend Request Sent to ${targetUser}`);
         }
 
-        /* ==========================================================================
-           7. MESSAGING & FRIEND REQUEST HANDLER
-           ========================================================================== */
         function renderMessagesView() {
             const list = document.getElementById('chat-list');
             let html = '';
 
-            // Render Friend Requests
             if (appState.requests.length > 0) {
                 html += `<div style="padding:10px 12px; font-size:0.8rem; color:var(--text-muted);">PENDING REQUESTS</div>`;
                 appState.requests.forEach(reqUser => {
@@ -1029,7 +919,6 @@
                 });
             }
 
-            // Render Active Friend Chats
             html += `<div style="padding:10px 12px; font-size:0.8rem; color:var(--text-muted);">MESSAGES</div>`;
             if (appState.friends.length === 0) {
                 html += `<div style="padding:20px; text-align:center; color:var(--text-muted);">No friends yet. Search and add users!</div>`;
@@ -1048,7 +937,6 @@
                     `;
                 });
             }
-
             list.innerHTML = html;
         }
 
@@ -1059,7 +947,6 @@
             }
             saveState();
 
-            // Notify back over PeerJS
             sendP2PData(reqUser, {
                 type: 'ACCEPT_REQUEST',
                 from: currentUser
@@ -1085,13 +972,11 @@
         function renderChatMessages() {
             const container = document.getElementById('chat-messages-container');
             const messages = appState.chats[activeChatUser] || [];
-
             container.innerHTML = messages.map(msg => `
                 <div class="msg-bubble ${msg.sender === currentUser ? 'msg-sent' : 'msg-received'}">
                     ${msg.text}
                 </div>
             `).join('');
-
             container.scrollTop = container.scrollHeight;
         }
 
@@ -1110,7 +995,6 @@
             appState.chats[activeChatUser].push(msgObj);
             saveState();
 
-            // Broadcast via WebRTC
             sendP2PData(activeChatUser, {
                 type: 'CHAT_MESSAGE',
                 from: currentUser,
@@ -1122,9 +1006,6 @@
             renderMessagesView();
         }
 
-        /* ==========================================================================
-           8. POST CREATION & MEDIA HANDLING
-           ========================================================================== */
         let currentSelectedMedia = null;
 
         function openCreateModal() {
@@ -1174,7 +1055,6 @@
             appState.posts.unshift(newPost);
             saveState();
 
-            // Broadcast new post to online friends
             appState.friends.forEach(friend => {
                 sendP2PData(friend, {
                     type: 'NEW_POST',
@@ -1188,9 +1068,6 @@
             showToast("Post Published!");
         }
 
-        /* ==========================================================================
-           9. PROFILE VIEW & UTILITIES
-           ========================================================================== */
         function renderProfile() {
             if (!currentUser) return;
             document.getElementById('profile-username').innerText = currentUser;
