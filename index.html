@@ -2,1104 +2,929 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Instagram Clone (Serverless)</title>
-
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- PeerJS for P2P Sync & Messaging -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW NEXUS 3D - P2P Serverless Edition</title>
+    <!-- PeerJS for Serverless P2P Networking -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-    <!-- Firebase App & Database (CDN) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
     <style>
-        :root {
-            --bg-color: #000000;
-            --card-bg: #121212;
-            --border-color: #262626;
-            --text-color: #f5f5f5;
-            --text-muted: #a8a8a8;
-            --accent-color: #0095f6;
-            --like-color: #ff3040;
-            --nav-height: 50px;
-        }
-
         * {
             box-sizing: border-box;
+            user-select: none;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        #app {
-            width: 100%;
-            max-width: 470px;
+            background-color: #050508;
+            color: #fff;
+            overflow: hidden;
+            width: 100vw;
             height: 100vh;
             display: flex;
-            flex-direction: column;
-            background: var(--bg-color);
-            position: relative;
-            box-shadow: 0 0 20px rgba(255,255,255,0.05);
-        }
-
-        @media (min-width: 768px) {
-            #app {
-                height: 92vh;
-                border: 1px solid var(--border-color);
-                border-radius: 12px;
-                overflow: hidden;
-            }
-        }
-
-        header {
-            height: var(--nav-height);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
+            justify-content: center;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            background: var(--bg-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
 
-        header .logo {
-            font-family: 'Grand Hotel', cursive, sans-serif;
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: -webkit-linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        header .nav-icons {
-            display: flex;
-            gap: 18px;
-            font-size: 1.3rem;
-            cursor: pointer;
-        }
-
-        main {
-            flex: 1;
-            overflow-y: auto;
+        #game-container {
+            width: 1280px;
+            height: 720px;
             position: relative;
-            padding-bottom: 60px;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #080810 100%);
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), inset 0 0 100px rgba(0,0,0,0.8);
+            border: 2px solid #2a2a40;
         }
 
-        main::-webkit-scrollbar {
-            display: none;
-        }
-
-        .view-section {
-            display: none;
+        /* SCREENS */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-        }
-
-        .view-section.active {
-            display: block;
-        }
-
-        nav {
-            height: 50px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: var(--bg-color);
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            z-index: 100;
-        }
-
-        nav .nav-item {
-            color: var(--text-color);
-            font-size: 1.3rem;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-
-        nav .nav-item:active {
-            transform: scale(0.85);
-        }
-
-        #auth-screen {
-            position: absolute;
-            inset: 0;
-            background: var(--bg-color);
-            z-index: 500;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            background: rgba(5, 5, 8, 0.95);
+            z-index: 10;
+            transition: opacity 0.4s ease;
         }
 
-        .auth-card {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
+        .hidden {
+            display: none !important;
         }
 
-        .auth-title {
-            font-size: 2.2rem;
+        h1.title {
+            font-size: 4rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ff2a5f, #ff9e00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 42, 95, 0.5);
             margin-bottom: 10px;
-            font-weight: 700;
         }
 
-        .input-field {
+        p.subtitle {
+            color: #8888aa;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .menu-box {
+            background: #11111a;
+            border: 1px solid #2a2a40;
+            padding: 30px;
+            border-radius: 12px;
+            width: 450px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        input[type="text"] {
             width: 100%;
-            padding: 12px 14px;
-            background: #121212;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            padding: 14px;
+            background: #1a1a26;
+            border: 1px solid #3a3a5c;
             color: #fff;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 1px;
             outline: none;
-            font-size: 0.95rem;
         }
 
-        .input-field:focus {
-            border-color: #555;
+        input[type="text"]:focus {
+            border-color: #ff2a5f;
+            box-shadow: 0 0 10px rgba(255, 42, 95, 0.3);
         }
 
         .btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
+            background: linear-gradient(135deg, #ff2a5f, #d4145a);
+            color: white;
             border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-weight: 600;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .post-card {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 42, 95, 0.4);
             margin-bottom: 10px;
         }
 
-        .post-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 42, 95, 0.6);
         }
 
-        .post-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            font-size: 0.9rem;
+        .btn-secondary {
+            background: linear-gradient(135deg, #2a2a40, #1a1a2e);
+            border: 1px solid #4a4a7c;
+            box-shadow: none;
         }
 
-        .avatar {
-            width: 34px;
-            height: 34px;
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #3a3a5c, #2a2a40);
+            box-shadow: 0 4px 15px rgba(100, 100, 150, 0.3);
+        }
+
+        /* CHARACTER SELECT GRID */
+        #char-select-screen {
+            padding: 40px;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            max-width: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .char-card {
+            background: #11111a;
+            border: 2px solid #2a2a40;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .char-card:hover, .char-card.selected {
+            border-color: #ff2a5f;
+            background: #1a1a2e;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(255, 42, 95, 0.4);
+        }
+
+        .char-avatar {
+            width: 70px;
+            height: 70px;
+            background: #080810;
             border-radius: 50%;
-            background: linear-gradient(45deg, #f09433, #bc1888);
+            margin: 0 auto 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.8rem;
+            border: 2px solid #3a3a5c;
+        }
+
+        .char-name {
+            font-size: 0.9rem;
             font-weight: bold;
-            color: #fff;
-            font-size: 0.85rem;
-            text-transform: uppercase;
+            margin-bottom: 5px;
         }
 
-        .post-img-container {
-            width: 100%;
+        .char-stats {
+            font-size: 0.75rem;
+            color: #8888aa;
+        }
+
+        /* 3D ARENA & HUD */
+        #arena {
             position: relative;
-            background: #000;
-            min-height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .post-img {
             width: 100%;
-            max-height: 450px;
-            object-fit: cover;
-            display: block;
+            height: 100%;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            background: linear-gradient(to bottom, #0d0d1a 0%, #030307 70%, #111118 100%);
         }
 
-        .post-actions {
+        /* Cinematic Background Elements */
+        .arena-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 50% 30%, rgba(50, 20, 80, 0.3) 0%, transparent 70%),
+                repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+        }
+
+        .arena-floor {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            left: -50%;
+            height: 280px;
+            background: linear-gradient(to bottom, #12121f 0%, #050508 100%);
+            transform: rotateX(65deg);
+            transform-origin: bottom center;
+            border-top: 2px solid #ff2a5f;
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.9);
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 25px;
+            width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 10px 12px;
-            font-size: 1.3rem;
+            padding: 0 50px;
+            z-index: 5;
+            pointer-events: none;
         }
 
-        .post-actions-left {
-            display: flex;
-            gap: 16px;
-        }
-
-        .post-actions i {
-            cursor: pointer;
-        }
-
-        .liked {
-            color: var(--like-color);
-        }
-
-        .post-details {
-            padding: 0 12px;
-            font-size: 0.9rem;
-        }
-
-        .post-likes {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .post-caption {
-            margin-bottom: 6px;
-            line-height: 1.3;
-        }
-
-        .post-caption .username {
-            font-weight: 600;
-            margin-right: 6px;
-        }
-
-        .post-comments {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .stories-container {
-            display: flex;
-            gap: 14px;
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .stories-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        .story-item {
+        .fighter-hud {
+            width: 45%;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-
-        .story-ring {
-            padding: 2px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
-        }
-
-        .story-ring .avatar {
-            border: 2px solid #000;
-        }
-
-        .search-bar-container {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .user-list {
-            list-style: none;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            border-bottom: 1px solid #1a1a1a;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .reels-container {
-            height: 100%;
-            scroll-snap-type: y mandatory;
-            overflow-y: scroll;
-        }
-
-        .reel-card {
-            height: 100%;
-            width: 100%;
-            scroll-snap-align: start;
-            position: relative;
-            background: #050505;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .reel-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .reel-overlay {
-            position: absolute;
-            bottom: 20px;
-            left: 12px;
-            right: 60px;
-            z-index: 10;
-        }
-
-        .reel-actions {
-            position: absolute;
-            right: 12px;
-            bottom: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-            font-size: 1.5rem;
-        }
-
-        .reel-action-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-        }
-
-        .chat-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-bottom: 1px solid #1a1a1a;
-            cursor: pointer;
-        }
-
-        #chat-window {
-            position: absolute;
-            inset: 0;
-            background: var(--bg-color);
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.25s ease-in-out;
-        }
-
-        #chat-window.open {
-            transform: translateX(0);
-        }
-
-        .chat-header {
-            height: var(--nav-height);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-            gap: 12px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 12px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .msg-bubble {
-            max-width: 75%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            font-size: 0.9rem;
-            line-height: 1.3;
-        }
-
-        .msg-sent {
-            align-self: flex-end;
-            background: var(--accent-color);
-            color: #fff;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg-received {
-            align-self: flex-start;
-            background: #262626;
-            color: #fff;
-            border-bottom-left-radius: 4px;
-        }
-
-        .chat-input-area {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid var(--border-color);
             gap: 8px;
         }
 
-        #create-modal {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+        .fighter-hud.right {
+            align-items: flex-end;
         }
 
-        .modal-card {
-            width: 100%;
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
+        .hud-info {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border: 1px solid var(--border-color);
+            justify-content: space-between;
+            width: 100%;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .preview-box {
+        .health-bar-container {
             width: 100%;
-            height: 200px;
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 26px;
+            background: #11111a;
+            border: 2px solid #3a3a5c;
+            border-radius: 4px;
             overflow: hidden;
+            padding: 2px;
+        }
+
+        .health-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff2a5f, #ff7000);
+            width: 100%;
+            transition: width 0.1s ease-out;
+            border-radius: 2px;
+        }
+
+        .fighter-hud.right .health-bar {
+            background: linear-gradient(90deg, #ff7000, #ff2a5f);
+            margin-left: auto;
+        }
+
+        .stamina-bar-container {
+            width: 60%;
+            height: 8px;
+            background: #11111a;
+            border: 1px solid #2a2a40;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stamina-bar {
+            height: 100%;
+            background: #00f0ff;
+            width: 100%;
+            transition: width 0.05s linear;
+        }
+
+        .match-timer {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #fff;
+            background: #11111a;
+            border: 2px solid #3a3a5c;
+            padding: 5px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* COMBAT FIGHTERS (DOM 3D SHADOW RENDERERS) */
+        .fighter {
+            position: absolute;
+            bottom: 120px;
+            width: 120px;
+            height: 260px;
+            transform-style: preserve-3d;
+            transition: transform 0.05s linear;
+            will-change: left, transform;
+        }
+
+        /* Shadow Silhouette Fighter Styling */
+        .fighter-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-style: preserve-3d;
+        }
+
+        .fighter-head {
+            width: 45px;
+            height: 45px;
+            background: #000;
+            border: 2px solid var(--theme-color, #ff2a5f);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--theme-color, #ff2a5f);
+            margin-bottom: 5px;
+        }
+
+        .fighter-torso {
+            width: 70px;
+            height: 110px;
+            background: linear-gradient(135deg, #111, #000);
+            border: 2px solid var(--theme-color, #ff2a5f);
+            border-radius: 10px;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.1), 0 0 20px var(--theme-color, #ff2a5f);
             position: relative;
         }
 
-        .preview-box img {
+        .fighter-limbs {
+            position: absolute;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            top: 0;
+            left: 0;
+            pointer-events: none;
         }
 
-        .toast {
+        .limb {
             position: absolute;
-            top: 20px;
+            background: #000;
+            border: 2px solid var(--theme-color, #ff2a5f);
+            box-shadow: 0 0 10px var(--theme-color, #ff2a5f);
+        }
+
+        .arm-left, .arm-right {
+            width: 16px;
+            height: 80px;
+            top: 55px;
+            border-radius: 8px;
+            transform-origin: top center;
+        }
+
+        .arm-left { left: -14px; }
+        .arm-right { right: -14px; }
+
+        .leg-left, .leg-right {
+            width: 18px;
+            height: 100px;
+            top: 160px;
+            border-radius: 8px;
+            transform-origin: top center;
+        }
+
+        .leg-left { left: 20px; }
+        .leg-right { right: 20px; }
+
+        /* Fighter Floor Shadow */
+        .fighter-shadow {
+            position: absolute;
+            bottom: -30px;
+            left: 10px;
+            width: 100px;
+            height: 30px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%);
+            transform: rotateX(60deg);
+        }
+
+        /* Action Effects */
+        .attack-effect {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--theme-color, #ff2a5f) 0%, transparent 70%);
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.5);
+            transition: all 0.15s ease-out;
+        }
+
+        .attack-effect.active {
+            opacity: 0.9;
+            transform: scale(1.5);
+        }
+
+        /* Notification / Modal Overlays */
+        #announcement {
+            position: absolute;
+            top: 40%;
             left: 50%;
-            transform: translateX(-50%);
-            background: #ffffff;
-            color: #000;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 4rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 30px #ff2a5f, 0 0 60px #ff2a5f;
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        #announcement.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #666688;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div id="app">
-        <!-- Notification Toast -->
-        <div id="toast" class="toast">Notice message here</div>
+<div id="game-container">
 
-        <!-- Auth Screen -->
-        <div id="auth-screen">
-            <div class="auth-card">
-                <div class="header" style="text-align: center; margin-bottom: 10px;">
-                    <i class="fa-solid fa-camera-retro" style="font-size: 3rem; color: #fff; margin-bottom: 10px;"></i>
-                    <h1 class="auth-title">Instagram</h1>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">Serverless P2P Edition</p>
-                </div>
-                <input type="text" id="username-input" class="input-field" placeholder="Choose Unique Username (e.g., alex99)" />
-                <button id="btn-register" class="btn" onclick="registerUser()">Create ID & Join</button>
-                <p id="auth-status" style="font-size: 0.8rem; color: #ff4444; min-height: 18px;"></p>
+    <!-- MAIN MENU SCREEN -->
+    <div id="menu-screen" class="screen">
+        <h1 class="title">Shadow Nexus</h1>
+        <p class="subtitle">Ultimate 3D Serverless P2P Combat</p>
+        <div class="menu-box">
+            <div id="connection-status" style="margin-bottom: 15px; font-size: 0.9rem; color: #ff9e00;">Initializing P2P Node...</div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px;">YOUR UNIQUE ID</label>
+                <input type="text" id="my-id-input" readonly placeholder="Generating ID...">
             </div>
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px;">FRIEND'S ID</label>
+                <input type="text" id="friend-id-input" placeholder="Enter Friend's ID here">
+            </div>
+            <button class="btn" id="connect-btn">Connect & Challenge</button>
+            <button class="btn btn-secondary" id="solo-btn">Practice vs AI</button>
         </div>
-
-        <!-- Header -->
-        <header>
-            <div class="logo">Instagram</div>
-            <div class="nav-icons">
-                <i class="fa-regular fa-plus-square" onclick="openCreateModal()"></i>
-                <i class="fa-regular fa-heart" onclick="showToast('No new notifications')"></i>
-                <i class="fa-regular fa-paper-plane" onclick="switchView('messages-view')"></i>
-            </div>
-        </header>
-
-        <!-- Main View Area -->
-        <main>
-            <!-- 1. FEED VIEW -->
-            <section id="feed-view" class="view-section active">
-                <div class="stories-container" id="stories-bar"></div>
-                <div id="posts-container"></div>
-            </section>
-
-            <!-- 2. SEARCH / EXPLORE VIEW -->
-            <section id="search-view" class="view-section">
-                <div class="search-bar-container">
-                    <input type="text" id="user-search-input" class="input-field" placeholder="Search exact ID or friends..." oninput="handleSearch(this.value)">
-                </div>
-                <ul class="user-list" id="search-results"></ul>
-            </section>
-
-            <!-- 3. REELS VIEW -->
-            <section id="reels-view" class="view-section">
-                <div class="reels-container" id="reels-container"></div>
-            </section>
-
-            <!-- 4. MESSAGES LIST VIEW -->
-            <section id="messages-view" class="view-section">
-                <div style="padding: 12px; border-bottom: 1px solid var(--border-color); font-weight: bold;">
-                    Messages & Friend Requests
-                </div>
-                <div class="chat-list" id="chat-list"></div>
-            </section>
-
-            <!-- 5. PROFILE VIEW -->
-            <section id="profile-view" class="view-section">
-                <div style="padding: 20px 16px; border-bottom: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <div class="avatar" id="profile-avatar" style="width: 70px; height: 70px; font-size: 1.8rem;">U</div>
-                        <div style="flex: 1;">
-                            <h2 id="profile-username" style="font-size: 1.2rem;">Username</h2>
-                            <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.85rem;">
-                                <div><b id="profile-post-count">0</b> posts</div>
-                                <div><b id="profile-friend-count">0</b> friends</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="profile-posts-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px;"></div>
-            </section>
-        </main>
-
-        <!-- Dynamic Chat Window Drawer -->
-        <div id="chat-window">
-            <div class="chat-header">
-                <i class="fa-solid fa-arrow-left" style="cursor: pointer;" onclick="closeChat()"></i>
-                <div class="avatar" id="chat-user-avatar" style="width: 30px; height: 30px;">C</div>
-                <b id="chat-user-name">Friend</b>
-            </div>
-            <div class="chat-messages" id="chat-messages-container"></div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-message-input" class="input-field" placeholder="Message..." onkeypress="handleChatKey(event)">
-                <button class="btn" style="width: auto; padding: 0 16px;" onclick="sendChatMessage()">Send</button>
-            </div>
-        </div>
-
-        <!-- Create Post Modal -->
-        <div id="create-modal">
-            <div class="modal-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <b>Create New Post / Reel</b>
-                    <i class="fa-solid fa-xmark" style="cursor: pointer;" onclick="closeCreateModal()"></i>
-                </div>
-                <div class="preview-box" onclick="document.getElementById('file-input').click()">
-                    <img id="image-preview" src="" style="display: none;">
-                    <span id="upload-placeholder" style="color: var(--text-muted); font-size: 0.85rem;"><i class="fa-solid fa-image"></i> Click to select image/video</span>
-                </div>
-                <input type="file" id="file-input" accept="image/*,video/*" style="display: none;" onchange="handleFileSelect(event)">
-                <textarea id="caption-input" class="input-field" rows="3" placeholder="Write a caption..."></textarea>
-                <button class="btn" onclick="publishPost()">Share</button>
-            </div>
-        </div>
-
-        <!-- Bottom Navigation Bar -->
-        <nav>
-            <div class="nav-item" onclick="switchView('feed-view')"><i class="fa-solid fa-house"></i></div>
-            <div class="nav-item" onclick="switchView('search-view')"><i class="fa-solid fa-magnifying-glass"></i></div>
-            <div class="nav-item" onclick="switchView('reels-view')"><i class="fa-solid fa-clapperboard"></i></div>
-            <div class="nav-item" onclick="switchView('messages-view')"><i class="fa-regular fa-comment"></i></div>
-            <div class="nav-item" onclick="switchView('profile-view')"><i class="fa-regular fa-user"></i></div>
-        </nav>
     </div>
 
-    <script>
-        let currentUser = localStorage.getItem('insta_p2p_username') || null;
-        let peer = null;
-        let activeChatUser = null;
+    <!-- CHARACTER SELECT SCREEN -->
+    <div id="char-select-screen" class="screen hidden">
+        <h1 class="title" style="font-size: 2.5rem; margin-bottom: 20px;">Choose Your Fighter</h1>
+        <div class="char-grid" id="char-grid">
+            <!-- 10 Characters Injected via JS -->
+        </div>
+        <button class="btn" id="start-fight-btn" style="width: 300px;" disabled>Select a Fighter</button>
+    </div>
 
-        let appState = {
-            friends: JSON.parse(localStorage.getItem('insta_friends')) || [],
-            requests: JSON.parse(localStorage.getItem('insta_requests')) || [],
-            posts: JSON.parse(localStorage.getItem('insta_posts')) || [],
-            chats: JSON.parse(localStorage.getItem('insta_chats')) || {},
-            reels: [
-                { id: 'r1', user: 'nature_explorer', video: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-leaves-low-angle-shot-1571-large.mp4', likes: 1420, caption: 'Fall vibes! 🍂' },
-                { id: 'r2', user: 'tech_guru', video: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-with-a-green-screen-41528-large.mp4', likes: 890, caption: 'Coding without servers! 🚀' }
-            ]
-        };
+    <!-- GAME ARENA SCREEN -->
+    <div id="game-screen" class="screen hidden" style="justify-content: flex-start;">
+        <div id="arena">
+            <div class="arena-bg"></div>
+            <div class="arena-floor"></div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (currentUser) {
-                document.getElementById('auth-screen').style.display = 'none';
-                initPeerJS();
-                renderAll();
-            }
+            <!-- HUD -->
+            <div class="hud">
+                <div class="fighter-hud left">
+                    <div class="hud-info">
+                        <span id="p1-name">Player 1</span>
+                        <span id="p1-hp-text">1000/1000</span>
+                    </div>
+                    <div class="health-bar-container">
+                        <div id="p1-hp" class="health-bar"></div>
+                    </div>
+                    <div class="stamina-bar-container">
+                        <div id="p1-stamina" class="stamina-bar"></div>
+                    </div>
+                </div>
+                <div class="match-timer" id="match-timer">99</div>
+                <div class="fighter-hud right">
+                    <div class="hud-info">
+                        <span id="p2-name">Player 2</span>
+                        <span id="p2-hp-text">1000/1000</span>
+                    </div>
+                    <div class="health-bar-container">
+                        <div id="p2-hp" class="health-bar right"></div>
+                    </div>
+                    <div class="stamina-bar-container" style="margin-left: auto;">
+                        <div id="p2-stamina" class="stamina-bar" style="margin-left: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FIGHTER 1 -->
+            <div id="fighter1" class="fighter" style="left: 150px;">
+                <div class="fighter-body" id="f1-body">
+                    <div class="fighter-head" id="f1-head"></div>
+                    <div class="fighter-torso" id="f1-torso">
+                        <div class="fighter-limbs">
+                            <div class="limb arm-left" id="f1-arm-l"></div>
+                            <div class="limb arm-right" id="f1-arm-r"></div>
+                            <div class="limb leg-left" id="f1-leg-l"></div>
+                            <div class="limb leg-right" id="f1-leg-r"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fighter-shadow"></div>
+                <div class="attack-effect" id="f1-effect"></div>
+            </div>
+
+            <!-- FIGHTER 2 -->
+            <div id="fighter2" class="fighter" style="right: 150px; left: auto;">
+                <div class="fighter-body" id="f2-body">
+                    <div class="fighter-head" id="f2-head"></div>
+                    <div class="fighter-torso" id="f2-torso">
+                        <div class="fighter-limbs">
+                            <div class="limb arm-left" id="f2-arm-l"></div>
+                            <div class="limb arm-right" id="f2-arm-r"></div>
+                            <div class="limb leg-left" id="f2-leg-l"></div>
+                            <div class="limb leg-right" id="f2-leg-r"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fighter-shadow"></div>
+                <div class="attack-effect" id="f2-effect"></div>
+            </div>
+
+            <div id="announcement">FIGHT!</div>
+            <div class="controls-hint">A / D: Move | W: Jump | S: Block | J: Light Attack | K: Heavy Attack | L: Special Ability</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* GAME DATA & 10 CHARACTERS DEFINITION */
+    const CHARACTERS = [
+        { id: 0, name: "Umbra Blade", icon: "🗡️", color: "#ff2a5f", hp: 1000, speed: 6, dmg: 45 },
+        { id: 1, name: "Kuro Samurai", icon: "⚔️", color: "#ff7000", hp: 1200, speed: 4.5, dmg: 65 },
+        { id: 2, name: "Viper Strike", icon: "🐍", color: "#00ff66", hp: 900, speed: 7.5, dmg: 40 },
+        { id: 3, name: "Iron Sentinel", icon: "🛡️", color: "#00f0ff", hp: 1400, speed: 3.5, dmg: 50 },
+        { id: 4, name: "Spectre Mage", icon: "🔮", color: "#9d00ff", hp: 850, speed: 6.5, dmg: 55 },
+        { id: 5, name: "Blood Fang", icon: "🦇", color: "#ff0055", hp: 950, speed: 6, dmg: 48 },
+        { id: 6, name: "Void Monarch", icon: "🌀", color: "#00ffff", hp: 1050, speed: 5.5, dmg: 52 },
+        { id: 7, name: "Solar Eclipse", icon: "☀️", color: "#ffcc00", hp: 1100, speed: 5, dmg: 58 },
+        { id: 8, name: "Ghost Monk", icon: "🧘", color: "#aa88ff", hp: 1000, speed: 6, dmg: 46 },
+        { id: 9, name: "Titan Fiend", icon: "👹", color: "#ff2222", hp: 1300, speed: 4, dmg: 70 }
+    ];
+
+    let peer = null;
+    let conn = null;
+    let isHost = false;
+    let myPeerId = '';
+    let selectedChar = null;
+    let opponentChar = null;
+    let gameMode = 'p2p'; // 'p2p' or 'ai'
+
+    // Match State
+    let matchActive = false;
+    let p1 = { x: 200, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: 1, blocking: stabbing = false, attacking: false, char: null };
+    let p2 = { x: 960, y: 0, vx: 0, vy: 0, hp: 1000, maxHp: 1000, stamina: 100, facing: -1, blocking: false, attacking: false, char: null };
+    let keys = {};
+    let timer = 99;
+    let timerInterval = null;
+
+    // DOM Elements
+    const menuScreen = document.getElementById('menu-screen');
+    const charSelectScreen = document.getElementById('char-select-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const myIdInput = document.getElementById('my-id-input');
+    const friendIdInput = document.getElementById('friend-id-input');
+    const connectBtn = document.getElementById('connect-btn');
+    const soloBtn = document.getElementById('solo-btn');
+    const connectionStatus = document.getElementById('connection-status');
+    const charGrid = document.getElementById('char-grid');
+    const startFightBtn = document.getElementById('start-fight-btn');
+    const announcement = document.getElementById('announcement');
+
+    // INITIALIZE PEERJS
+    function initPeer() {
+        peer = new Peer();
+        peer.on('open', (id) => {
+            myPeerId = id;
+            myIdInput.value = id;
+            connectionStatus.textContent = "P2P Node Ready. Share ID or Connect!";
+            connectionStatus.style.color = "#00ff66";
         });
 
-        async function registerUser() {
-            const usernameInput = document.getElementById('username-input').value.trim().toLowerCase();
-            const statusEl = document.getElementById('auth-status');
-            const btn = document.getElementById('btn-register');
+        peer.on('connection', (incomingConn) => {
+            conn = incomingConn;
+            isHost = false;
+            setupConnection();
+            connectionStatus.textContent = "Friend Connected! Choose Character.";
+            setTimeout(() => goToCharSelect(), 1000);
+        });
 
-            if (!usernameInput || usernameInput.length < 3) {
-                statusEl.innerText = "Username must be at least 3 characters.";
-                return;
-            }
+        peer.on('error', (err) => {
+            connectionStatus.textContent = "Connection Error. Try refreshing.";
+            connectionStatus.style.color = "#ff2a5f";
+        });
+    }
 
-            if (!/^[a-z0-9_]+$/.test(usernameInput)) {
-                statusEl.innerText = "Only letters, numbers, and underscores allowed.";
-                return;
-            }
+    function setupConnection() {
+        conn.on('data', (data) => {
+            handleNetworkData(data);
+        });
+        conn.on('close', () => {
+            alert("Opponent disconnected!");
+            location.reload();
+        });
+    }
 
-            btn.disabled = true;
-            statusEl.innerText = "Logging in...";
+    connectBtn.addEventListener('click', () => {
+        const friendId = friendIdInput.value.trim();
+        if (!friendId) return alert("Please enter your friend's ID!");
+        connectionStatus.textContent = "Connecting to Friend...";
+        conn = peer.connect(friendId);
+        isHost = true;
+        setupConnection();
+        conn.on('open', () => {
+            connectionStatus.textContent = "Connected! Choose Character.";
+            setTimeout(() => goToCharSelect(), 1000);
+        });
+    });
 
-            currentUser = usernameInput;
-            localStorage.setItem('insta_p2p_username', currentUser);
-            document.getElementById('auth-screen').style.display = 'none';
-            initPeerJS();
-            renderAll();
-            showToast("Account Created Successfully!");
-        }
+    soloBtn.addEventListener('click', () => {
+        gameMode = 'ai';
+        goToCharSelect();
+    });
 
-        function initPeerJS() {
-            peer = new Peer('insta-p2p-' + currentUser);
-
-            peer.on('open', (id) => {
-                console.log('Connected to P2P network as:', id);
-            });
-
-            peer.on('connection', (conn) => {
-                conn.on('data', (data) => {
-                    handleIncomingP2PData(data, conn);
-                });
-            });
-
-            peer.on('error', (err) => {
-                console.warn("P2P Connection Info:", err.type);
-            });
-        }
-
-        function handleIncomingP2PData(data, conn) {
-            switch(data.type) {
-                case 'FRIEND_REQUEST':
-                    if (!appState.requests.includes(data.from)) {
-                        appState.requests.push(data.from);
-                        saveState();
-                        renderMessagesView();
-                        showToast(`New friend request from ${data.from}`);
-                    }
-                    break;
-                case 'ACCEPT_REQUEST':
-                    if (!appState.friends.includes(data.from)) {
-                        appState.friends.push(data.from);
-                        saveState();
-                        renderAll();
-                        showToast(`${data.from} accepted your friend request!`);
-                    }
-                    break;
-                case 'CHAT_MESSAGE':
-                    if (!appState.chats[data.from]) appState.chats[data.from] = [];
-                    appState.chats[data.from].push({ sender: data.from, text: data.text, time: Date.now() });
-                    saveState();
-                    if (activeChatUser === data.from) {
-                        renderChatMessages();
-                    } else {
-                        showToast(`New message from ${data.from}`);
-                    }
-                    renderMessagesView();
-                    break;
-                case 'NEW_POST':
-                    appState.posts.unshift(data.post);
-                    saveState();
-                    renderFeed();
-                    break;
-            }
-        }
-
-        function sendP2PData(targetUser, payload) {
-            const conn = peer.connect('insta-p2p-' + targetUser);
-            conn.on('open', () => {
-                conn.send(payload);
-            });
-        }
-
-        function switchView(viewId) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-        }
-
-        function renderAll() {
-            renderStories();
-            renderFeed();
-            renderReels();
-            renderMessagesView();
-            renderProfile();
-        }
-
-        function renderStories() {
-            const bar = document.getElementById('stories-bar');
-            let html = `
-                <div class="story-item" onclick="openCreateModal()">
-                    <div class="story-ring" style="background: #333;">
-                        <div class="avatar" style="background:#222;">+</div>
-                    </div>
-                    <span>Your Story</span>
-                </div>
+    // CHARACTER SELECTION SETUP
+    function buildCharGrid() {
+        charGrid.innerHTML = '';
+        CHARACTERS.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'char-card';
+            card.innerHTML = `
+                <div class="char-avatar" style="border-color: ${c.color}">${c.icon}</div>
+                <div class="char-name">${c.name}</div>
+                <div class="char-stats">HP: ${c.hp}<br>DMG: ${c.dmg}</div>
             `;
-            appState.friends.forEach(friend => {
-                html += `
-                    <div class="story-item">
-                        <div class="story-ring">
-                            <div class="avatar">${friend[0]}</div>
-                        </div>
-                        <span>${friend}</span>
-                    </div>
-                `;
+            card.onclick = () => {
+                document.querySelectorAll('.char-card').forEach(el => el.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedChar = c;
+                startFightBtn.disabled = false;
+                startFightBtn.textContent = `Fight with ${c.name}`;
+            };
+            charGrid.appendChild(card);
+        });
+    }
+
+    function goToCharSelect() {
+        menuScreen.classList.add('hidden');
+        charSelectScreen.classList.remove('hidden');
+        buildCharGrid();
+    }
+
+    startFightBtn.addEventListener('click', () => {
+        if (!selectedChar) return;
+        p1.char = selectedChar;
+        p1.hp = selectedChar.hp;
+        p1.maxHp = selectedChar.hp;
+
+        if (gameMode === 'p2p' && conn) {
+            conn.send({ type: 'char-select', char: selectedChar });
+            startFightBtn.textContent = "Waiting for Friend...";
+            startFightBtn.disabled = true;
+            checkBothReady();
+        } else {
+            // AI Mode opponent selection
+            const randIdx = Math.floor(Math.random() * CHARACTERS.length);
+            opponentChar = CHARACTERS[randIdx];
+            p2.char = opponentChar;
+            p2.hp = opponentChar.hp;
+            p2.maxHp = opponentChar.hp;
+            initGameArena();
+        }
+    });
+
+    function checkBothReady() {
+        if (selectedChar && opponentChar) {
+            initGameArena();
+        }
+    }
+
+    function handleNetworkData(data) {
+        if (data.type === 'char-select') {
+            opponentChar = data.char;
+            p2.char = opponentChar;
+            p2.hp = opponentChar.hp;
+            p2.maxHp = opponentChar.hp;
+            if (selectedChar) {
+                conn.send({ type: 'char-select', char: selectedChar });
+                initGameArena();
+            }
+        } else if (data.type === 'update-state') {
+            if (!isHost) {
+                // Sync P1 state from host
+                p1.x = data.p1.x;
+                p1.y = data.p1.y;
+                p1.hp = data.p1.hp;
+                p1.stamina = data.p1.stamina;
+                p1.blocking = data.p1.blocking;
+                p1.attacking = data.p1.attacking;
+                p2.x = data.p2.x;
+                p2.y = data.p2.y;
+                p2.hp = data.p2.hp;
+                p2.stamina = data.p2.stamina;
+                p2.blocking = data.p2.blocking;
+                p2.attacking = data.p2.attacking;
+            }
+        } else if (data.type === 'action') {
+            if (isHost && data.action === 'attack') {
+                // Handle client attack received on host
+                triggerAttack(p2, p1);
+            }
+        }
+    }
+
+    // GAME ARENA START
+    function initGameArena() {
+        charSelectScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+
+        // Apply visual themes
+        document.getElementById('f1-body').style.setProperty('--theme-color', p1.char.color);
+        document.getElementById('f2-body').style.setProperty('--theme-color', p2.char.color);
+        document.getElementById('p1-name').textContent = p1.char.name;
+        document.getElementById('p2-name').textContent = p2.char.name;
+
+        matchActive = true;
+        announcement.textContent = "FIGHT!";
+        announcement.classList.add('show');
+        setTimeout(() => announcement.classList.remove('show'), 1500);
+
+        startTimer();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            if (!matchActive) return;
+            timer--;
+            document.getElementById('match-timer').textContent = timer;
+            if (timer <= 0) {
+                endMatch(p1.hp >= p2.hp ? "Player 1 Wins on Time!" : "Player 2 Wins on Time!");
+            }
+        }, 1000);
+    }
+
+    // INPUT LISTENERS
+    window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+    // COMBAT ENGINE & LOOP
+    function gameLoop() {
+        if (!matchActive) return;
+
+        updatePlayerPhysics();
+        if (gameMode === 'ai') updateAI();
+        updateHUD();
+        renderFighters();
+
+        if (gameMode === 'p2p' && isHost && conn) {
+            conn.send({
+                type: 'update-state',
+                p1: { x: p1.x, y: p1.y, hp: p1.hp, stamina: p1.stamina, blocking: p1.blocking, attacking: p1.attacking },
+                p2: { x: p2.x, y: p2.y, hp: p2.hp, stamina: p2.stamina, blocking: p2.blocking, attacking: p2.attacking }
             });
-            bar.innerHTML = html;
         }
 
-        function renderFeed() {
-            const container = document.getElementById('posts-container');
-            if (appState.posts.length === 0) {
-                container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">No posts yet. Upload a post or add friends!</div>`;
-                return;
-            }
-            container.innerHTML = appState.posts.map((post, idx) => `
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="post-user">
-                            <div class="avatar">${post.username[0]}</div>
-                            <span>${post.username}</span>
-                        </div>
-                        <i class="fa-solid fa-ellipsis"></i>
-                    </div>
-                    <div class="post-img-container" ondblclick="toggleLike(${idx})">
-                        <img src="${post.image}" class="post-img" />
-                    </div>
-                    <div class="post-actions">
-                        <div class="post-actions-left">
-                            <i class="${post.liked ? 'fa-solid fa-heart liked' : 'fa-regular fa-heart'}" onclick="toggleLike(${idx})"></i>
-                            <i class="fa-regular fa-comment"></i>
-                            <i class="fa-regular fa-paper-plane"></i>
-                        </div>
-                        <i class="fa-regular fa-bookmark"></i>
-                    </div>
-                    <div class="post-details">
-                        <div class="post-likes">${post.likes} likes</div>
-                        <div class="post-caption">
-                            <span class="username">${post.username}</span>${post.caption}
-                        </div>
-                        <div class="post-comments">View all comments</div>
-                    </div>
-                </div>
-            `).join('');
-        }
+        requestAnimationFrame(gameLoop);
+    }
 
-        function toggleLike(index) {
-            const post = appState.posts[index];
-            post.liked = !post.liked;
-            post.likes += post.liked ? 1 : -1;
-            saveState();
-            renderFeed();
-        }
-
-        function renderReels() {
-            const container = document.getElementById('reels-container');
-            container.innerHTML = appState.reels.map(reel => `
-                <div class="reel-card">
-                    <video class="reel-video" src="${reel.video}" loop autoplay muted onclick="this.paused ? this.play() : this.pause()"></video>
-                    <div class="reel-overlay">
-                        <div style="display:flex; align-items:center; gap:8px; font-weight:bold; margin-bottom:8px;">
-                            <div class="avatar" style="width:28px; height:28px;">${reel.user[0]}</div>
-                            <span>${reel.user}</span>
-                        </div>
-                        <p>${reel.caption}</p>
-                    </div>
-                    <div class="reel-actions">
-                        <div class="reel-action-btn"><i class="fa-solid fa-heart"></i><span>${reel.likes}</span></div>
-                        <div class="reel-action-btn"><i class="fa-solid fa-comment"></i><span>45</span></div>
-                        <div class="reel-action-btn"><i class="fa-solid fa-paper-plane"></i></div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function handleSearch(query) {
-            query = query.trim().toLowerCase();
-            const list = document.getElementById('search-results');
-            if (!query) {
-                list.innerHTML = '';
-                return;
-            }
-            if (query === currentUser) {
-                list.innerHTML = `<li style="padding:15px; color:var(--text-muted); text-align:center;">That's you!</li>`;
-                return;
-            }
-
-            list.innerHTML = `
-                <li class="user-item">
-                    <div class="user-info">
-                        <div class="avatar">${query[0]}</div>
-                        <b>${query}</b>
-                    </div>
-                    ${appState.friends.includes(query) ? 
-                        '<span style="color:var(--text-muted); font-size:0.85rem;">Friends</span>' : 
-                        `<button class="btn" style="width:auto; padding:6px 14px;" onclick="sendFriendRequest('${query}')">Add Friend</button>`
-                    }
-                </li>
-            `;
-        }
-
-        function sendFriendRequest(targetUser) {
-            sendP2PData(targetUser, {
-                type: 'FRIEND_REQUEST',
-                from: currentUser
-            });
-            showToast(`Friend Request Sent to ${targetUser}`);
-        }
-
-        function renderMessagesView() {
-            const list = document.getElementById('chat-list');
-            let html = '';
-
-            if (appState.requests.length > 0) {
-                html += `<div style="padding:10px 12px; font-size:0.8rem; color:var(--text-muted);">PENDING REQUESTS</div>`;
-                appState.requests.forEach(reqUser => {
-                    html += `
-                        <div class="chat-item">
-                            <div class="avatar">${reqUser[0]}</div>
-                            <div style="flex:1;">
-                                <b>${reqUser}</b>
-                                <div style="font-size:0.8rem; color:var(--text-muted);">Wants to connect</div>
-                            </div>
-                            <button class="btn" style="width:auto; padding:6px 12px;" onclick="acceptRequest('${reqUser}')">Accept</button>
-                        </div>
-                    `;
-                });
-            }
-
-            html += `<div style="padding:10px 12px; font-size:0.8rem; color:var(--text-muted);">MESSAGES</div>`;
-            if (appState.friends.length === 0) {
-                html += `<div style="padding:20px; text-align:center; color:var(--text-muted);">No friends yet. Search and add users!</div>`;
-            } else {
-                appState.friends.forEach(friend => {
-                    const lastMsgArray = appState.chats[friend] || [];
-                    const lastMsg = lastMsgArray.length > 0 ? lastMsgArray[lastMsgArray.length - 1].text : 'Tap to start chat';
-                    html += `
-                        <div class="chat-item" onclick="openChat('${friend}')">
-                            <div class="avatar">${friend[0]}</div>
-                            <div style="flex:1;">
-                                <b>${friend}</b>
-                                <div style="font-size:0.8rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${lastMsg}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            list.innerHTML = html;
-        }
-
-        function acceptRequest(reqUser) {
-            appState.requests = appState.requests.filter(u => u !== reqUser);
-            if (!appState.friends.includes(reqUser)) {
-                appState.friends.push(reqUser);
-            }
-            saveState();
-
-            sendP2PData(reqUser, {
-                type: 'ACCEPT_REQUEST',
-                from: currentUser
-            });
-
-            renderAll();
-            showToast(`You are now friends with ${reqUser}`);
-        }
-
-        function openChat(friend) {
-            activeChatUser = friend;
-            document.getElementById('chat-user-name').innerText = friend;
-            document.getElementById('chat-user-avatar').innerText = friend[0].toUpperCase();
-            document.getElementById('chat-window').classList.add('open');
-            renderChatMessages();
-        }
-
-        function closeChat() {
-            activeChatUser = null;
-            document.getElementById('chat-window').classList.remove('open');
-        }
-
-        function renderChatMessages() {
-            const container = document.getElementById('chat-messages-container');
-            const messages = appState.chats[activeChatUser] || [];
-            container.innerHTML = messages.map(msg => `
-                <div class="msg-bubble ${msg.sender === currentUser ? 'msg-sent' : 'msg-received'}">
-                    ${msg.text}
-                </div>
-            `).join('');
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function handleChatKey(e) {
-            if (e.key === 'Enter') sendChatMessage();
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chat-message-input');
-            const text = input.value.trim();
-            if (!text || !activeChatUser) return;
-
-            if (!appState.chats[activeChatUser]) appState.chats[activeChatUser] = [];
+    function updatePlayerPhysics() {
+        // P1 Controls (WASD + J/K/L)
+        if (isHost || gameMode === 'ai') {
+            if (keys['a']) { p1.x -= p1.char.speed; p1.facing = -1; }
+            if (keys['d']) { p1.x += p1.char.speed; p1.facing = 1; }
+            if (keys['w'] && p1.y === 0) { p1.vy = 16; } // Jump
             
-            const msgObj = { sender: currentUser, text: text, time: Date.now() };
-            appState.chats[activeChatUser].push(msgObj);
-            saveState();
+            p1.blocking = keys['s'];
 
-            sendP2PData(activeChatUser, {
-                type: 'CHAT_MESSAGE',
-                from: currentUser,
-                text: text
-            });
-
-            input.value = '';
-            renderChatMessages();
-            renderMessagesView();
-        }
-
-        let currentSelectedMedia = null;
-
-        function openCreateModal() {
-            document.getElementById('create-modal').style.display = 'flex';
-        }
-
-        function closeCreateModal() {
-            document.getElementById('create-modal').style.display = 'none';
-            currentSelectedMedia = null;
-            document.getElementById('image-preview').style.display = 'none';
-            document.getElementById('upload-placeholder').style.display = 'block';
-            document.getElementById('caption-input').value = '';
-        }
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                currentSelectedMedia = event.target.result;
-                const img = document.getElementById('image-preview');
-                img.src = currentSelectedMedia;
-                img.style.display = 'block';
-                document.getElementById('upload-placeholder').style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function publishPost() {
-            const caption = document.getElementById('caption-input').value.trim();
-            if (!currentSelectedMedia) {
-                showToast("Please select an image or video");
-                return;
+            if (keys['j'] && !p1.attacking && p1.stamina >= 15) {
+                performAttack(p1, p2, p1.char.dmg, 'f1-effect');
+                p1.stamina -= 15;
             }
+            if (keys['k'] && !p1.attacking && p1.stamina >= 35) {
+                performAttack(p1, p2, p1.char.dmg * 1.5, 'f1-effect');
+                p1.stamina -= 35;
+            }
+        } else {
+            // Client controls mapped to P2 in P2P mode
+            if (keys['a']) { p2.x -= p2.char.speed; p2.facing = -1; }
+            if (keys['d']) { p2.x += p2.char.speed; p2.facing = 1; }
+            if (keys['w'] && p2.y === 0) { p2.vy = 16; }
+            
+            p2.blocking = keys['s'];
 
-            const newPost = {
-                id: 'post_' + Date.now(),
-                username: currentUser,
-                image: currentSelectedMedia,
-                caption: caption,
-                likes: 0,
-                liked: false,
-                timestamp: Date.now()
-            };
-
-            appState.posts.unshift(newPost);
-            saveState();
-
-            appState.friends.forEach(friend => {
-                sendP2PData(friend, {
-                    type: 'NEW_POST',
-                    post: newPost
-                });
-            });
-
-            closeCreateModal();
-            renderFeed();
-            renderProfile();
-            showToast("Post Published!");
+            if (keys['j'] && !p2.attacking && p2.stamina >= 15) {
+                conn.send({ type: 'action', action: 'attack' });
+                performAttack(p2, p1, p2.char.dmg, 'f2-effect');
+                p2.stamina -= 15;
+            }
         }
 
-        function renderProfile() {
-            if (!currentUser) return;
-            document.getElementById('profile-username').innerText = currentUser;
-            document.getElementById('profile-avatar').innerText = currentUser[0].toUpperCase();
+        // Gravity & Boundaries
+        [p1, p2].forEach(p => {
+            p.y += p.vy;
+            if (p.y > 0) p.vy -= 1.2; // Gravity
+            if (p.y <= 0) { p.y = 0; p.vy = 0; }
 
-            const myPosts = appState.posts.filter(p => p.username === currentUser);
-            document.getElementById('profile-post-count').innerText = myPosts.length;
-            document.getElementById('profile-friend-count').innerText = appState.friends.length;
+            // Arena bounds
+            if (p.x < 50) p.x = 50;
+            if (p.x > 1150) p.x = 1150;
 
-            const grid = document.getElementById('profile-posts-grid');
-            grid.innerHTML = myPosts.map(p => `
-                <div style="aspect-ratio: 1/1; background:#111; overflow:hidden;">
-                    <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" />
-                </div>
-            `).join('');
+            // Stamina regen
+            if (p.stamina < 100) p.stamina += 0.5;
+        });
+
+        // Face each other
+        if (p1.x < p2.x) { p1.facing = 1; p2.facing = -1; }
+        else { p1.facing = -1; p2.facing = 1; }
+    }
+
+    function performAttack(attacker, defender, damage, effectId) {
+        attacker.attacking = true;
+        setTimeout(() => attacker.attacking = false, 250);
+
+        // Visual effect trigger
+        const fx = document.getElementById(effectId);
+        fx.style.left = (attacker.x + (attacker.facing * 50)) + 'px';
+        fx.style.bottom = (attacker.y + 80) + 'px';
+        fx.classList.add('active');
+        setTimeout(() => fx.classList.remove('active'), 150);
+
+        // Collision check
+        const dist = Math.abs(attacker.x - defender.x);
+        if (dist < 110) {
+            if (defender.blocking) {
+                damage *= 0.2; // Block reduces 80% damage
+            }
+            defender.hp -= damage;
+            if (defender.hp <= 0) {
+                defender.hp = 0;
+                endMatch(attacker === p1 ? "Player 1 Wins!" : "Player 2 Wins!");
+            }
         }
+    }
 
-        function saveState() {
-            localStorage.setItem('insta_friends', JSON.stringify(appState.friends));
-            localStorage.setItem('insta_requests', JSON.stringify(appState.requests));
-            localStorage.setItem('insta_posts', JSON.stringify(appState.posts));
-            localStorage.setItem('insta_chats', JSON.stringify(appState.chats));
+    function updateAI() {
+        // Simple reactive AI for solo practice
+        const dist = p1.x - p2.x;
+        if (Math.abs(dist) > 90) {
+            p2.x += (dist > 0 ? 1 : -1) * (p2.char.speed * 0.7);
+        } else {
+            if (Math.random() < 0.03 && !p2.attacking) {
+                performAttack(p2, p1, p2.char.dmg, 'f2-effect');
+            }
         }
+    }
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
-        }
-    </script>
+    function updateHUD() {
+        document.getElementById('p1-hp').style.width = `${(p1.hp / p1.maxHp) * 100}%`;
+        document.getElementById('p1-hp-text').textContent = `${Math.round(p1.hp)}/${p1.maxHp}`;
+        document.getElementById('p1-stamina').style.width = `${p1.stamina}%`;
+
+        document.getElementById('p2-hp').style.width = `${(p2.hp / p2.maxHp) * 100}%`;
+        document.getElementById('p2-hp-text').textContent = `${Math.round(p2.hp)}/${p2.maxHp}`;
+        document.getElementById('p2-stamina').style.width = `${p2.stamina}%`;
+    }
+
+    function renderFighters() {
+        const f1El = document.getElementById('fighter1');
+        const f2El = document.getElementById('fighter2');
+
+        f1El.style.left = `${p1.x}px`;
+        f1El.style.bottom = `${120 + p1.y}px`;
+        f1El.style.transform = `scaleX(${p1.facing})`;
+
+        f2El.style.left = `${p2.x}px`;
+        f2El.style.bottom = `${120 + p2.y}px`;
+        f2El.style.transform = `scaleX(${p2.facing})`;
+    }
+
+    function endMatch(msg) {
+        matchActive = false;
+        clearInterval(timerInterval);
+        announcement.textContent = msg;
+        announcement.classList.add('show');
+        setTimeout(() => {
+            location.reload();
+        }, 3000);
+    }
+
+    // Run Peer init on load
+    initPeer();
+</script>
+
 </body>
 </html>
